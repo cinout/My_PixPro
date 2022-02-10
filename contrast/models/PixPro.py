@@ -47,13 +47,15 @@ def regression_loss(q, k, coord_q, coord_k, pos_ratio=0.5):
     """
     N, C, H, W = q.shape
     # [bs, feat_dim, 49]
-    q = q.view(N, C, -1)
+    q = q.view(N, C, -1)  # combine H and W (7*7)
     k = k.view(N, C, -1)
 
     # generate center_coord, width, height
     # [1, 7, 7]
-    x_array = torch.arange(0., float(W), dtype=coord_q.dtype, device=coord_q.device).view(1, 1, -1).repeat(1, H, 1)
-    y_array = torch.arange(0., float(H), dtype=coord_q.dtype, device=coord_q.device).view(1, -1, 1).repeat(1, 1, W)
+    x_array = torch.arange(0., float(W), dtype=coord_q.dtype,
+                           device=coord_q.device).view(1, 1, -1).repeat(1, H, 1)
+    y_array = torch.arange(0., float(H), dtype=coord_q.dtype,
+                           device=coord_q.device).view(1, -1, 1).repeat(1, 1, W)
     # [bs, 1, 1]
     q_bin_width = ((coord_q[:, 2] - coord_q[:, 0]) / W).view(-1, 1, 1)
     q_bin_height = ((coord_q[:, 3] - coord_q[:, 1]) / H).view(-1, 1, 1)
@@ -84,7 +86,8 @@ def regression_loss(q, k, coord_q, coord_k, pos_ratio=0.5):
     # [bs, 49, 49]
     logit = torch.bmm(q.transpose(1, 2), k)
 
-    loss = (logit * pos_mask).sum(-1).sum(-1) / (pos_mask.sum(-1).sum(-1) + 1e-6)
+    loss = (logit * pos_mask).sum(-1).sum(-1) / \
+        (pos_mask.sum(-1).sum(-1) + 1e-6)
 
     return -2 * loss.mean()
 
@@ -102,10 +105,10 @@ class PixPro(BaseModel):
         super(PixPro, self).__init__(base_encoder, args)
 
         # parse arguments
-        self.pixpro_p               = args.pixpro_p
-        self.pixpro_momentum        = args.pixpro_momentum
-        self.pixpro_pos_ratio       = args.pixpro_pos_ratio
-        self.pixpro_clamp_value     = args.pixpro_clamp_value
+        self.pixpro_p = args.pixpro_p
+        self.pixpro_momentum = args.pixpro_momentum
+        self.pixpro_pos_ratio = args.pixpro_pos_ratio
+        self.pixpro_clamp_value = args.pixpro_clamp_value
         self.pixpro_transform_layer = args.pixpro_transform_layer
         self.pixpro_ins_loss_weight = args.pixpro_ins_loss_weight
 
@@ -130,18 +133,23 @@ class PixPro(BaseModel):
         nn.SyncBatchNorm.convert_sync_batchnorm(self.projector)
         nn.SyncBatchNorm.convert_sync_batchnorm(self.projector_k)
 
-        self.K = int(args.num_instances * 1. / get_world_size() / args.batch_size * args.epochs)
-        self.k = int(args.num_instances * 1. / get_world_size() / args.batch_size * (args.start_epoch - 1))
+        self.K = int(args.num_instances * 1. / get_world_size() /
+                     args.batch_size * args.epochs)
+        self.k = int(args.num_instances * 1. / get_world_size() /
+                     args.batch_size * (args.start_epoch - 1))
 
+        # pixpro_transform_layer (self.value_transform): function g(*) in PPM module in model design
         if self.pixpro_transform_layer == 0:
             self.value_transform = Identity()
         elif self.pixpro_transform_layer == 1:
             self.value_transform = conv1x1(in_planes=256, out_planes=256)
         elif self.pixpro_transform_layer == 2:
-            self.value_transform = MLP2d(in_dim=256, inner_dim=256, out_dim=256)
+            self.value_transform = MLP2d(
+                in_dim=256, inner_dim=256, out_dim=256)
         else:
             raise NotImplementedError
 
+        # if consider instance-level branch loss
         if self.pixpro_ins_loss_weight > 0.:
             self.projector_instance = Proj_Head()
             self.projector_instance_k = Proj_Head()
@@ -162,18 +170,23 @@ class PixPro(BaseModel):
         """
         Momentum update of the key encoder
         """
-        _contrast_momentum = 1. - (1. - self.pixpro_momentum) * (np.cos(np.pi * self.k / self.K) + 1) / 2.
+        _contrast_momentum = 1. - \
+            (1. - self.pixpro_momentum) * \
+            (np.cos(np.pi * self.k / self.K) + 1) / 2.
         self.k = self.k + 1
 
         for param_q, param_k in zip(self.encoder.parameters(), self.encoder_k.parameters()):
-            param_k.data = param_k.data * _contrast_momentum + param_q.data * (1. - _contrast_momentum)
+            param_k.data = param_k.data * _contrast_momentum + \
+                param_q.data * (1. - _contrast_momentum)
 
         for param_q, param_k in zip(self.projector.parameters(), self.projector_k.parameters()):
-            param_k.data = param_k.data * _contrast_momentum + param_q.data * (1. - _contrast_momentum)
+            param_k.data = param_k.data * _contrast_momentum + \
+                param_q.data * (1. - _contrast_momentum)
 
         if self.pixpro_ins_loss_weight > 0.:
             for param_q, param_k in zip(self.projector_instance.parameters(), self.projector_instance_k.parameters()):
-                param_k.data = param_k.data * _contrast_momentum + param_q.data * (1. - _contrast_momentum)
+                param_k.data = param_k.data * _contrast_momentum + \
+                    param_q.data * (1. - _contrast_momentum)
 
     def featprop(self, feat):
         N, C, H, W = feat.shape
@@ -226,11 +239,13 @@ class PixPro(BaseModel):
         if self.pixpro_ins_loss_weight > 0.:
             proj_instance_1 = self.projector_instance(feat_1)
             pred_instacne_1 = self.predictor(proj_instance_1)
-            pred_instance_1 = F.normalize(self.avgpool(pred_instacne_1).view(pred_instacne_1.size(0), -1), dim=1)
+            pred_instance_1 = F.normalize(self.avgpool(
+                pred_instacne_1).view(pred_instacne_1.size(0), -1), dim=1)
 
             proj_instance_2 = self.projector_instance(feat_2)
             pred_instance_2 = self.predictor(proj_instance_2)
-            pred_instance_2 = F.normalize(self.avgpool(pred_instance_2).view(pred_instance_2.size(0), -1), dim=1)
+            pred_instance_2 = F.normalize(self.avgpool(
+                pred_instance_2).view(pred_instance_2.size(0), -1), dim=1)
 
         # compute key features
         with torch.no_grad():  # no gradient to keys
@@ -255,11 +270,12 @@ class PixPro(BaseModel):
 
         # compute loss
         loss = regression_loss(pred_1, proj_2_ng, coord1, coord2, self.pixpro_pos_ratio) \
-            + regression_loss(pred_2, proj_1_ng, coord2, coord1, self.pixpro_pos_ratio)
+            + regression_loss(pred_2, proj_1_ng, coord2,
+                              coord1, self.pixpro_pos_ratio)
 
         if self.pixpro_ins_loss_weight > 0.:
             loss_instance = self.regression_loss(pred_instance_1, proj_instance_2_ng) + \
-                         self.regression_loss(pred_instance_2, proj_instance_1_ng)
+                self.regression_loss(pred_instance_2, proj_instance_1_ng)
             loss = loss + self.pixpro_ins_loss_weight * loss_instance
 
         return loss
