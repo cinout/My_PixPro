@@ -1,0 +1,2 @@
+RUN pretrain:
+$ python3 -m torch.distributed.launch  main_pretrain.py --model PixPro --local_rank 0
