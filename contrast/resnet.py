@@ -2,32 +2,54 @@ import math
 
 import torch.nn as nn
 
-__all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152',
-           'resnet18_d', 'resnet34_d', 'resnet50_d', 'resnet101_d', 'resnet152_d',
-           'resnet50_16s', 'resnet50_w2x', 'resnext101_32x8d', 'resnext152_32x8d']
+__all__ = [
+    "ResNet",
+    "resnet18",
+    "resnet34",
+    "resnet50",
+    "resnet101",
+    "resnet152",
+    "resnet18_d",
+    "resnet34_d",
+    "resnet50_d",
+    "resnet101_d",
+    "resnet152_d",
+    "resnet50_16s",
+    "resnet50_w2x",
+    "resnext101_32x8d",
+    "resnext152_32x8d",
+]
 
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
+    return nn.Conv2d(
+        in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
+    )
 
 
 def conv3x3_bn_relu(in_planes, out_planes, stride=1):
     return nn.Sequential(
-        conv3x3(in_planes, out_planes, stride),
-        nn.BatchNorm2d(out_planes),
-        nn.ReLU()
+        conv3x3(in_planes, out_planes, stride), nn.BatchNorm2d(out_planes), nn.ReLU()
     )
 
 
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None,
-                 groups=1, base_width=64, dilation=-1):
+    def __init__(
+        self,
+        inplanes,
+        planes,
+        stride=1,
+        downsample=None,
+        groups=1,
+        base_width=64,
+        dilation=-1,
+    ):
         super(BasicBlock, self).__init__()
         if groups != 1 or base_width != 64:
-            raise ValueError('BasicBlock only supports groups=1 and base_width=64')
+            raise ValueError("BasicBlock only supports groups=1 and base_width=64")
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = nn.BatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
@@ -58,16 +80,34 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None,
-                 groups=1, base_width=64, dilation=1):
+    def __init__(
+        self,
+        inplanes,
+        planes,
+        stride=1,
+        downsample=None,
+        groups=1,
+        base_width=64,
+        dilation=1,
+    ):
         super(Bottleneck, self).__init__()
-        width = int(planes * (base_width / 64.)) * groups
+        width = int(planes * (base_width / 64.0)) * groups
         self.conv1 = nn.Conv2d(inplanes, width, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(width)
-        self.conv2 = nn.Conv2d(width, width, kernel_size=3, stride=stride, dilation=dilation,
-                               padding=dilation, groups=groups, bias=False)
+        self.conv2 = nn.Conv2d(
+            width,
+            width,
+            kernel_size=3,
+            stride=stride,
+            dilation=dilation,
+            padding=dilation,
+            groups=groups,
+            bias=False,
+        )
         self.bn2 = nn.BatchNorm2d(width)
-        self.conv3 = nn.Conv2d(width, planes * self.expansion, kernel_size=1, bias=False)
+        self.conv3 = nn.Conv2d(
+            width, planes * self.expansion, kernel_size=1, bias=False
+        )
         self.bn3 = nn.BatchNorm2d(planes * self.expansion)
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
@@ -97,29 +137,45 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
-
-    def __init__(self, block, layers, in_channel=3, width=1,
-                 groups=1, width_per_group=64,
-                 mid_dim=1024, low_dim=128,
-                 avg_down=False, deep_stem=False,
-                 head_type='mlp_head', layer4_dilation=1):
+    def __init__(
+        self,
+        block,
+        layers,
+        in_channel=3,
+        width=1,
+        groups=1,
+        width_per_group=64,
+        mid_dim=1024,
+        low_dim=128,
+        avg_down=False,
+        deep_stem=False,  # rresnet18_d: True
+        head_type="mlp_head",
+        layer4_dilation=1,
+    ):
         super(ResNet, self).__init__()
-        self.avg_down = avg_down
-        self.inplanes = 64 * width
-        self.base = int(64 * width)
-        self.groups = groups
-        self.base_width = width_per_group
+        self.avg_down = avg_down  # resnet18: False, resnet18_d: True
+        self.inplanes = 64 * width  # resnet18: 64
+        self.base = int(64 * width)  # resnet18: 64
+        self.groups = groups  # resnet18: 1
+        self.base_width = width_per_group  # resnet18: 64
 
-        mid_dim = self.base * 8 * block.expansion
+        mid_dim = self.base * 8 * block.expansion  # resnet18: 64*8*1
 
         if deep_stem:
             self.conv1 = nn.Sequential(
                 conv3x3_bn_relu(in_channel, 32, stride=2),
                 conv3x3_bn_relu(32, 32, stride=1),
-                conv3x3(32, 64, stride=1)
+                conv3x3(32, 64, stride=1),
             )
         else:
-            self.conv1 = nn.Conv2d(in_channel, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
+            self.conv1 = nn.Conv2d(
+                in_channel,
+                self.inplanes,
+                kernel_size=7,
+                stride=2,
+                padding=3,
+                bias=False,
+            )
 
         self.bn1 = nn.BatchNorm2d(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
@@ -131,32 +187,35 @@ class ResNet(nn.Module):
         if layer4_dilation == 1:
             self.layer4 = self._make_layer(block, self.base * 8, layers[3], stride=2)
         elif layer4_dilation == 2:
-            self.layer4 = self._make_layer(block, self.base * 8, layers[3], stride=1, dilation=2)
+            self.layer4 = self._make_layer(
+                block, self.base * 8, layers[3], stride=1, dilation=2
+            )
         else:
             raise NotImplementedError
         self.avgpool = nn.AvgPool2d(7, stride=1)
 
         self.head_type = head_type
-        if head_type == 'mlp_head':
+        if head_type == "mlp_head":
             self.fc1 = nn.Linear(mid_dim, mid_dim)
             self.relu2 = nn.ReLU(inplace=True)
             self.fc2 = nn.Linear(mid_dim, low_dim)
-        elif head_type == 'reduce':
+        elif head_type == "reduce":
             self.fc = nn.Linear(mid_dim, low_dim)
-        elif head_type == 'conv_head':
+        elif head_type == "conv_head":
             self.fc1 = nn.Conv2d(mid_dim, mid_dim, kernel_size=1, bias=False)
             self.bn2 = nn.BatchNorm2d(2048)
             self.relu2 = nn.ReLU(inplace=True)
             self.fc2 = nn.Linear(mid_dim, low_dim)
-        elif head_type in ['pass', 'early_return', 'multi_layer']:
+        elif head_type in ["pass", "early_return", "multi_layer"]:
             pass
         else:
             raise NotImplementedError
 
+        # initialize values
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.weight.data.normal_(0, math.sqrt(2.0 / n))
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -178,21 +237,49 @@ class ResNet(nn.Module):
             if self.avg_down:
                 downsample = nn.Sequential(
                     nn.AvgPool2d(kernel_size=stride, stride=stride),
-                    nn.Conv2d(self.inplanes, planes * block.expansion,
-                              kernel_size=1, stride=1, bias=False),
+                    nn.Conv2d(
+                        self.inplanes,
+                        planes * block.expansion,
+                        kernel_size=1,
+                        stride=1,
+                        bias=False,
+                    ),
                     nn.BatchNorm2d(planes * block.expansion),
                 )
             else:
                 downsample = nn.Sequential(
-                    nn.Conv2d(self.inplanes, planes * block.expansion,
-                              kernel_size=1, stride=stride, bias=False),
+                    nn.Conv2d(
+                        self.inplanes,
+                        planes * block.expansion,
+                        kernel_size=1,
+                        stride=stride,
+                        bias=False,
+                    ),
                     nn.BatchNorm2d(planes * block.expansion),
                 )
 
-        layers = [block(self.inplanes, planes, stride, downsample, self.groups, self.base_width, dilation)]
+        layers = [
+            block(
+                self.inplanes,
+                planes,
+                stride,
+                downsample,
+                self.groups,
+                self.base_width,
+                dilation,
+            )
+        ]
         self.inplanes = planes * block.expansion
         for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes, groups=self.groups, base_width=self.base_width, dilation=dilation))
+            layers.append(
+                block(
+                    self.inplanes,
+                    planes,
+                    groups=self.groups,
+                    base_width=self.base_width,
+                    dilation=dilation,
+                )
+            )
 
         return nn.Sequential(*layers)
 
@@ -205,30 +292,31 @@ class ResNet(nn.Module):
         c3 = self.layer2(c2)
         c4 = self.layer3(c3)
         c5 = self.layer4(c4)
-        if self.head_type == 'multi_layer':
+
+        if self.head_type == "multi_layer":
             return c2, c3, c4, c5
 
-        if self.head_type == 'early_return':
+        if self.head_type == "early_return":
             return c5
 
-        if self.head_type != 'conv_head':
+        if self.head_type != "conv_head":
             c5 = self.avgpool(c5)
             c5 = c5.view(c5.size(0), -1)
 
-        if self.head_type == 'mlp_head':
+        if self.head_type == "mlp_head":
             out = self.fc1(c5)
             out = self.relu2(out)
             out = self.fc2(out)
-        elif self.head_type == 'reduce':
+        elif self.head_type == "reduce":
             out = self.fc(c5)
-        elif self.head_type == 'conv_head':
+        elif self.head_type == "conv_head":
             out = self.fc1(c5)
             out = self.bn2(out)
             out = self.relu2(out)
             out = self.avgpool(out)
             out = out.view(out.size(0), -1)
             out = self.fc2(out)
-        elif self.head_type == 'pass':
+        elif self.head_type == "pass":
             return c5
         else:
             raise NotImplementedError

@@ -13,7 +13,8 @@ if __name__ == "__main__":
 
     new_model = {}
     for k, v in obj.items():
-        if not k.startswith("module.encoder."): # discard "module.projector.*" and "module.value_transform.*"
+        # discard "module.encoder_k.*" "module.projector.*" and "module.value_transform.*"
+        if not k.startswith("module.encoder."):
             continue
         old_k = k
         k = k.replace("module.encoder.", "")
