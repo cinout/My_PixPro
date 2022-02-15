@@ -207,6 +207,7 @@ if __name__ == "__main__":
 
     # setup logger
     os.makedirs(opt.output_dir, exist_ok=True)
+
     logger = setup_logger(
         output=opt.output_dir, distributed_rank=dist.get_rank(), name="contrast"
     )
