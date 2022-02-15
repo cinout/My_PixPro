@@ -9,7 +9,7 @@ from contrast import resnet
 from tensorboard_visualizer import TensorboardVisualizer
 from mvtec_dataloader import MVTecDRAEMTrainDataset
 
-# TODO: cuda optimization
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 location_args = {
@@ -28,8 +28,8 @@ hyper_args = {"lr": 0.0001, "epochs": 100, "bs": 32}
 # load pretrained resnet50 encoder
 ##########################
 checkpoint = torch.load(
-    location_args["pretrained_resnet"], map_location="cpu"
-)  # TODO: map_location: GPU?
+    location_args["pretrained_resnet"], map_location=device
+)
 checkpoint_obj = checkpoint["model"]
 pretrained_model = {}
 
@@ -86,12 +86,14 @@ def train_on_device(categories):
             log_dir=os.path.join(location_args["log"], run_name + "/")
         )
 
-        encoder = resnet.__dict__["resnet50"](head_type="early_return").to(device)
-        # TODO: encoder.cuda()
+        encoder = resnet.__dict__["resnet50"](
+            head_type="early_return").to(device)
         encoder.load_state_dict(pretrained_model)
+        encoder.to(device)
         encoder.train()  # set model to training mode
 
-        optimizer = torch.optim.Adam(params=encoder.parameters(), lr=hyper_args["lr"])
+        optimizer = torch.optim.Adam(
+            params=encoder.parameters(), lr=hyper_args["lr"])
 
         scheduler = optim.lr_scheduler.MultiStepLR(
             optimizer,
@@ -187,11 +189,17 @@ if __name__ == "__main__":
 
     parsed_args = parser.parse_args()
 
-    assert parsed_args.category in category_list + ["all"], "Invalid category option"
+    assert parsed_args.category in category_list + \
+        ["all"], "Invalid category option"
 
     picked_classes = (
         [parsed_args.category] if parsed_args.category != "all" else category_list
     )
 
-    # TODO: with torch.cuda.device(parsed_args.gpu_id):
-    train_on_device(picked_classes)
+    if device=="cuda":
+        with torch.cuda.device(parsed_args.gpu_id):
+            train_on_device(picked_classes)
+    else:
+        train_on_device(picked_classes)
+
+  

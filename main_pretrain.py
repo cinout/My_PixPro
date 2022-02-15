@@ -19,7 +19,7 @@ from contrast.option import parse_option
 from contrast.util import AverageMeter
 from contrast.lars import add_weight_decay, LARS
 
-# TODO: cuda optimization
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -46,6 +46,7 @@ def build_model(args):
         raise NotImplementedError
 
     # FIXME: commented out because it causes error
+
     # model = DistributedDataParallel(
     #     model, device_ids=[args.local_rank], broadcast_buffers=False
     # )
