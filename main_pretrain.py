@@ -60,7 +60,8 @@ def load_pretrained(model, pretrained_model):
 
     model_dict.update(state_dict)
     model.load_state_dict(model_dict)
-    logger.info(f"==> loaded checkpoint '{pretrained_model}' (epoch {ckpt['epoch']})")
+    logger.info(
+        f"==> loaded checkpoint '{pretrained_model}' (epoch {ckpt['epoch']})")
 
 
 def load_checkpoint(args, model, optimizer, scheduler, sampler=None):
@@ -72,7 +73,8 @@ def load_checkpoint(args, model, optimizer, scheduler, sampler=None):
     optimizer.load_state_dict(checkpoint["optimizer"])
     scheduler.load_state_dict(checkpoint["scheduler"])
 
-    logger.info(f"=> loaded successfully '{args.resume}' (epoch {checkpoint['epoch']})")
+    logger.info(
+        f"=> loaded successfully '{args.resume}' (epoch {checkpoint['epoch']})")
 
     del checkpoint
     torch.cuda.empty_cache()
@@ -123,7 +125,8 @@ def main(args):
             )
     if args.resume:
         assert os.path.isfile(args.resume)
-        load_checkpoint(args, model, optimizer, scheduler, sampler=train_loader.sampler)
+        load_checkpoint(args, model, optimizer, scheduler,
+                        sampler=train_loader.sampler)
 
     # tensorboard
     if dist.get_rank() == 0:
@@ -135,7 +138,8 @@ def main(args):
         if isinstance(train_loader.sampler, DistributedSampler):
             train_loader.sampler.set_epoch(epoch)
 
-        train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer)
+        train(epoch, train_loader, model, optimizer,
+              scheduler, args, summary_writer)
 
         print("dist.get_rank() == 0:", dist.get_rank() == 0)
         print(epoch)
@@ -158,13 +162,11 @@ def train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer
 
     end = time.time()
     for idx, data in enumerate(train_loader):
-        print(">>> idx:", idx)
 
         data = [item.to(device, non_blocking=True) for item in data]
 
         # In PixPro, data[0] -> im1, data[1] -> im2, data[2] -> coord1, data[3] -> coord2
         loss = model(data[0], data[1], data[2], data[3])
-        print(">>> loss:", loss)
 
         # backward
         optimizer.zero_grad()
@@ -215,7 +217,8 @@ if __name__ == "__main__":
 
     # print args
     logger.info(
-        "\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(opt)).items()))
+        "\n".join("%s: %s" % (k, str(v))
+                  for k, v in sorted(dict(vars(opt)).items()))
     )
 
     main(opt)

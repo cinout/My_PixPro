@@ -30,7 +30,8 @@ def conv3x3(in_planes, out_planes, stride=1):
 
 def conv3x3_bn_relu(in_planes, out_planes, stride=1):
     return nn.Sequential(
-        conv3x3(in_planes, out_planes, stride), nn.BatchNorm2d(out_planes), nn.ReLU()
+        conv3x3(in_planes, out_planes, stride), nn.BatchNorm2d(
+            out_planes), nn.ReLU()
     )
 
 
@@ -49,7 +50,8 @@ class BasicBlock(nn.Module):
     ):
         super(BasicBlock, self).__init__()
         if groups != 1 or base_width != 64:
-            raise ValueError("BasicBlock only supports groups=1 and base_width=64")
+            raise ValueError(
+                "BasicBlock only supports groups=1 and base_width=64")
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = nn.BatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
@@ -182,10 +184,13 @@ class ResNet(nn.Module):
 
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, self.base, layers[0])
-        self.layer2 = self._make_layer(block, self.base * 2, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, self.base * 4, layers[2], stride=2)
+        self.layer2 = self._make_layer(
+            block, self.base * 2, layers[1], stride=2)
+        self.layer3 = self._make_layer(
+            block, self.base * 4, layers[2], stride=2)
         if layer4_dilation == 1:
-            self.layer4 = self._make_layer(block, self.base * 8, layers[3], stride=2)
+            self.layer4 = self._make_layer(
+                block, self.base * 8, layers[3], stride=2)
         elif layer4_dilation == 2:
             self.layer4 = self._make_layer(
                 block, self.base * 8, layers[3], stride=1, dilation=2
@@ -284,17 +289,14 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        print(">>> step 1:")
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
-        print(">>> step 2:")
         c2 = self.layer1(x)
         c3 = self.layer2(c2)
         c4 = self.layer3(c3)
         c5 = self.layer4(c4)
-        print(">>> step 3:")
 
         if self.head_type == "multi_layer":
             return c2, c3, c4, c5

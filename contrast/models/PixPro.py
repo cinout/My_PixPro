@@ -91,7 +91,8 @@ def regression_loss(q, k, coord_q, coord_k, pos_ratio=0.5):
     dist_center = (
         torch.sqrt(
             (center_q_x.view(-1, H * W, 1) - center_k_x.view(-1, 1, H * W)) ** 2
-            + (center_q_y.view(-1, H * W, 1) - center_k_y.view(-1, 1, H * W)) ** 2
+            + (center_q_y.view(-1, H * W, 1) -
+               center_k_y.view(-1, 1, H * W)) ** 2
         )
         / max_bin_diag
     )
@@ -102,7 +103,8 @@ def regression_loss(q, k, coord_q, coord_k, pos_ratio=0.5):
     # [bs, 49, 49]
     logit = torch.bmm(q.transpose(1, 2), k)
 
-    loss = (logit * pos_mask).sum(-1).sum(-1) / (pos_mask.sum(-1).sum(-1) + 1e-6)
+    loss = (logit * pos_mask).sum(-1).sum(-1) / \
+        (pos_mask.sum(-1).sum(-1) + 1e-6)
 
     return -2 * loss.mean()
 
@@ -170,7 +172,8 @@ class PixPro(BaseModel):
         elif self.pixpro_transform_layer == 1:
             self.value_transform = conv1x1(in_planes=256, out_planes=256)
         elif self.pixpro_transform_layer == 2:
-            self.value_transform = MLP2d(in_dim=256, inner_dim=256, out_dim=256)
+            self.value_transform = MLP2d(
+                in_dim=256, inner_dim=256, out_dim=256)
         else:
             raise NotImplementedError
 
@@ -201,7 +204,8 @@ class PixPro(BaseModel):
         """
         _contrast_momentum = (
             1.0
-            - (1.0 - self.pixpro_momentum) * (np.cos(np.pi * self.k / self.K) + 1) / 2.0
+            - (1.0 - self.pixpro_momentum) *
+            (np.cos(np.pi * self.k / self.K) + 1) / 2.0
         )
         self.k = self.k + 1
 
@@ -233,37 +237,24 @@ class PixPro(BaseModel):
 
         # Value transformation
         feat_value = self.value_transform(feat)
-        print(">>> step featprop 1:")
         feat_value = F.normalize(feat_value, dim=1)
-        print(">>> step featprop 2:")
         feat_value = feat_value.view(N, C, -1)
-        print(">>> step featprop 3:")
 
         # Similarity calculation
         feat = F.normalize(feat, dim=1)
-        print(">>> step featprop 4:")
 
         # [N, C, H * W]
         feat = feat.view(N, C, -1)
-        print(">>> step featprop 5:")
 
         # [N, H * W, H * W]
-        print(feat.transpose(1, 2))
-        print(feat)
         attention = torch.bmm(feat.transpose(1, 2), feat)
-        print(">>> step featprop 5.1:")
         attention = torch.clamp(attention, min=self.pixpro_clamp_value)
-        print(">>> step featprop 5.2:")
         if self.pixpro_p < 1.0:
-            print(">>> step featprop 5.2.1:")
             attention = attention + 1e-6
-        print(">>> step featprop 5.3:")
         attention = attention**self.pixpro_p
-        print(">>> step featprop 6:")
 
         # [N, C, H * W]
         feat = torch.bmm(feat_value, attention.transpose(1, 2))
-        print(">>> step featprop 7:")
 
         return feat.view(N, C, H, W)
 
@@ -280,13 +271,9 @@ class PixPro(BaseModel):
         """
         # compute query features
         feat_1 = self.encoder(im_1)  # queries: NxC
-        print(">>> step 4:")
         proj_1 = self.projector(feat_1)
-        print(">>> step 5:")
         pred_1 = self.featprop(proj_1)
-        print(">>> step 6:")
         pred_1 = F.normalize(pred_1, dim=1)
-        print(">>> step 7:")
 
         feat_2 = self.encoder(im_2)
         proj_2 = self.projector(feat_2)
