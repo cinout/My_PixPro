@@ -3,20 +3,21 @@
 set -e
 set -x
 
-data_dir="./data/imagenet/"
-output_dir="./output/pixpro_base_r50_100ep"
+number_of_processes=1
+data_dir="./data/mvtec/"
+output_dir="./output/pixpro_mvtec_r18_400ep"
 
 
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 
-python -m torch.distributed.launch --master_port 12348 --nproc_per_node=1 \
+python -m torch.distributed.launch --master_port 12348 --nproc_per_node=${number_of_processes} \
     main_pretrain.py \
     --data-dir ${data_dir} \
     --output-dir ${output_dir} \
     \
-    --zip --cache-mode no \
+    --cache-mode no \
     --crop 0.08 \
     --aug BYOL \
-    --dataset ImageNet \
+    --dataset MVTec \
     --batch-size 128 \
     \
     --model PixPro \
@@ -38,3 +39,5 @@ python -m torch.distributed.launch --master_port 12348 --nproc_per_node=1 \
     --pixpro-pos-ratio 0.7 \
     --pixpro-transform-layer 1 \
     --pixpro-ins-loss-weight 0. \
+    \
+    --mvtec_category zipper

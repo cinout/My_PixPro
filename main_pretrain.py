@@ -19,10 +19,13 @@ from contrast.option import parse_option
 from contrast.util import AverageMeter
 from contrast.lars import add_weight_decay, LARS
 
+# TODO: cuda optimization
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
 
 def build_model(args):
     encoder = resnet.__dict__[args.arch]
-    model = models.__dict__[args.model](encoder, args).cuda()
+    model = models.__dict__[args.model](encoder, args).to(device)
 
     if args.optimizer == "sgd":
         optimizer = torch.optim.SGD(
@@ -42,9 +45,10 @@ def build_model(args):
     else:
         raise NotImplementedError
 
-    model = DistributedDataParallel(
-        model, device_ids=[args.local_rank], broadcast_buffers=False
-    )
+    # FIXME: commented out because it causes error
+    # model = DistributedDataParallel(
+    #     model, device_ids=[args.local_rank], broadcast_buffers=False
+    # )
 
     return model, optimizer
 
@@ -133,6 +137,8 @@ def main(args):
 
         train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer)
 
+        print("dist.get_rank() == 0:", dist.get_rank() == 0)
+        print(epoch)
         if dist.get_rank() == 0 and (
             epoch % args.save_freq == 0 or epoch == args.epochs
         ):
@@ -152,10 +158,13 @@ def train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer
 
     end = time.time()
     for idx, data in enumerate(train_loader):
-        data = [item.cuda(non_blocking=True) for item in data]
+        print(">>> idx:", idx)
+
+        data = [item.to(device, non_blocking=True) for item in data]
 
         # In PixPro, data[0] -> im1, data[1] -> im2, data[2] -> coord1, data[3] -> coord2
         loss = model(data[0], data[1], data[2], data[3])
+        print(">>> loss:", loss)
 
         # backward
         optimizer.zero_grad()
@@ -190,7 +199,7 @@ if __name__ == "__main__":
 
     if opt.local_rank:
         torch.device(opt.local_rank)
-    torch.distributed.init_process_group(backend="nccl", init_method="env://")
+    torch.distributed.init_process_group(backend="gloo", init_method="env://")
     cudnn.benchmark = True
 
     # setup logger

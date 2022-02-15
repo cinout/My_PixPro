@@ -9,16 +9,22 @@ from .transform import get_transform
 from .dataset import ImageFolder
 
 
-def get_loader(aug_type, args, two_crop=False, prefix='train', return_coord=False):
+def get_loader(aug_type, args, two_crop=False, prefix="train", return_coord=False):
+    # default: aug_type (aug): BYOL, crop: 0.08, image_size: 224
     transform = get_transform(aug_type, args.crop, args.image_size)
 
     # dataset
     if args.zip:
-        if args.dataset == 'ImageNet':
+        # FIXME: right now it only supports imagenet
+        if args.dataset == "ImageNet":
             train_ann_file = prefix + "_map.txt"
             train_prefix = prefix + ".zip@/"
         else:
-            raise NotImplementedError('Dataset {} is not supported. We only support ImageNet now'.format(args.dataset))
+            raise NotImplementedError(
+                "Dataset {} is not supported. We only support ImageNet now".format(
+                    args.dataset
+                )
+            )
 
         train_dataset = ImageFolder(
             args.data_dir,
@@ -28,18 +34,31 @@ def get_loader(aug_type, args, two_crop=False, prefix='train', return_coord=Fals
             two_crop=two_crop,
             cache_mode=args.cache_mode,
             dataset=args.dataset,
-            return_coord=return_coord)
+            return_coord=return_coord,
+        )
     else:
-        train_folder = os.path.join(args.data_dir, prefix)
-        train_dataset = ImageFolder(
-            train_folder,
-            transform=transform,
-            two_crop=two_crop,
-            return_coord=return_coord)
+        if args.dataset == "ImageNet":
+            train_folder = os.path.join(args.data_dir, prefix)
+            train_dataset = ImageFolder(
+                train_folder,
+                transform=transform,
+                two_crop=two_crop,
+                return_coord=return_coord,
+                dataset=args.dataset,
+            )
+        elif args.dataset == "MVTec":
+            train_folder = os.path.join(args.data_dir, args.mvtec_category, prefix)
+            train_dataset = ImageFolder(
+                train_folder,
+                transform=transform,
+                two_crop=two_crop,
+                return_coord=return_coord,
+                dataset=args.dataset,
+            )
 
     # sampler
     indices = np.arange(dist.get_rank(), len(train_dataset), dist.get_world_size())
-    if args.zip and args.cache_mode == 'part':
+    if args.zip and args.cache_mode == "part":
         sampler = SubsetRandomSampler(indices)
     else:
         sampler = DistributedSampler(train_dataset)
@@ -52,4 +71,5 @@ def get_loader(aug_type, args, two_crop=False, prefix='train', return_coord=Fals
         num_workers=args.num_workers,
         pin_memory=True,
         sampler=sampler,
-        drop_last=True)
+        drop_last=True,
+    )

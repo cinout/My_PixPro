@@ -23,6 +23,13 @@ def has_file_allowed_extension(filename, extensions):
 
 
 def find_classes(dir):
+    """Find all folder names within `dir`
+    Args:
+        dir (string): parent directory
+    Returns:
+        classes: str[], sorted
+        class_to_idx: dict[str, idx]
+    """
     classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
     classes.sort()
     class_to_idx = {classes[i]: i for i in range(len(classes))}
@@ -30,6 +37,12 @@ def find_classes(dir):
 
 
 def make_dataset(dir, class_to_idx, extensions):
+    """Find all the images
+    Args:
+
+    Returns:
+
+    """
     images = []
     dir = os.path.expanduser(dir)
     for target in sorted(os.listdir(dir)):
@@ -47,15 +60,16 @@ def make_dataset(dir, class_to_idx, extensions):
     return images
 
 
-def make_dataset_with_ann(ann_file, img_prefix, extensions, dataset='ImageNet'):
+def make_dataset_with_ann(ann_file, img_prefix, extensions, dataset="ImageNet"):
+    # only used in zip mode
     images = []
 
     # make COCO dataset
-    if dataset == 'COCO':
+    if dataset == "COCO":
         coco = COCO(ann_file)
         img_ids = coco.getImgIds()
         for idx in img_ids:
-            im_file_name = coco.loadImgs([idx])[0]['file_name']
+            im_file_name = coco.loadImgs([idx])[0]["file_name"]
             class_index = 0
 
             assert str.lower(os.path.splitext(im_file_name)[-1]) in extensions
@@ -69,7 +83,7 @@ def make_dataset_with_ann(ann_file, img_prefix, extensions, dataset='ImageNet'):
     with open(ann_file, "r") as f:
         contents = f.readlines()
         for line_str in contents:
-            path_contents = [c for c in line_str.split('\t')]
+            path_contents = [c for c in line_str.split("\t")]
             im_file_name = path_contents[0]
             class_index = int(path_contents[1])
 
@@ -102,39 +116,57 @@ class DatasetFolder(data.Dataset):
         samples (list): List of (sample path, class_index) tuples
     """
 
-    def __init__(self, root, loader, extensions, ann_file='', img_prefix='', transform=None, target_transform=None,
-                 cache_mode="no", dataset='ImageNet'):
-        # image folder mode
-        if ann_file == '':
+    def __init__(
+        self,
+        root,
+        loader,
+        extensions,
+        ann_file="",
+        img_prefix="",
+        transform=None,
+        target_transform=None,
+        cache_mode="no",
+        dataset="ImageNet",
+    ):
+
+        if ann_file == "":
+            # folder mode
             _, class_to_idx = find_classes(root)
             samples = make_dataset(root, class_to_idx, extensions)
-        # zip mode
+
         else:
-            samples = make_dataset_with_ann(os.path.join(root, ann_file),
-                                            os.path.join(root, img_prefix),
-                                            extensions,
-                                            dataset)
+            # zip mode
+            samples = make_dataset_with_ann(
+                os.path.join(root, ann_file),
+                os.path.join(root, img_prefix),
+                extensions,
+                dataset,
+            )
 
         if len(samples) == 0:
-            raise(RuntimeError("Found 0 files in subfolders of: " + root + "\n"
-                               "Supported extensions are: " + ",".join(extensions)))
+            raise (
+                RuntimeError(
+                    "Found 0 files in subfolders of: " + root + "\n"
+                    "Supported extensions are: " + ",".join(extensions)
+                )
+            )
 
         self.root = root
         self.loader = loader
         self.extensions = extensions
-
-        self.samples = samples
-        self.labels = [y_1k for _, y_1k in samples]
+        self.samples = samples  # list[tuple[filepath, folderIndex]], e.g., [('./data/mvtec/zipper/train/good/000.png', 0)]
+        self.labels = [y_1k for _, y_1k in samples]  # a list of 0s for MVTec
         self.classes = list(set(self.labels))
 
         self.transform = transform
-        self.target_transform = target_transform
+        self.target_transform = target_transform  # It is always None in this code
 
-        self.cache_mode = cache_mode
+        self.cache_mode = cache_mode  # default: no
         if self.cache_mode != "no":
             self.init_cache()
 
     def init_cache(self):
+        # not used in default mode
         assert self.cache_mode in ["part", "full"]
         n_sample = len(self.samples)
         global_rank = dist.get_rank()
@@ -143,10 +175,10 @@ class DatasetFolder(data.Dataset):
         samples_bytes = [None for _ in range(n_sample)]
         start_time = time.time()
         for index in range(n_sample):
-            if index % (n_sample//10) == 0:
+            if index % (n_sample // 10) == 0:
                 t = time.time() - start_time
                 logger = logging.getLogger(__name__)
-                logger.info(f'cached {index}/{n_sample} takes {t:.2f}s per block')
+                logger.info(f"cached {index}/{n_sample} takes {t:.2f}s per block")
                 start_time = time.time()
             path, target = self.samples[index]
             if self.cache_mode == "full" or index % world_size == global_rank:
@@ -160,9 +192,10 @@ class DatasetFolder(data.Dataset):
         Args:
             index (int): Index
         Returns:
+            sample: image (read by loader)
             tuple: (sample, target) where target is class_index of the target class.
         """
-        path, target = self.samples[index]
+        path, target = self.samples[index]  # target: index of image class(folder)
         sample = self.loader(path)
         if self.transform is not None:
             sample = self.transform(sample)
@@ -175,17 +208,21 @@ class DatasetFolder(data.Dataset):
         return len(self.samples)
 
     def __repr__(self):
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        fmt_str += '    Root Location: {}\n'.format(self.root)
-        tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
+        fmt_str = "Dataset " + self.__class__.__name__ + "\n"
+        fmt_str += "    Number of datapoints: {}\n".format(self.__len__())
+        fmt_str += "    Root Location: {}\n".format(self.root)
+        tmp = "    Transforms (if any): "
+        fmt_str += "{0}{1}\n".format(
+            tmp, self.transform.__repr__().replace("\n", "\n" + " " * len(tmp))
+        )
+        tmp = "    Target Transforms (if any): "
+        fmt_str += "{0}{1}".format(
+            tmp, self.target_transform.__repr__().replace("\n", "\n" + " " * len(tmp))
+        )
         return fmt_str
 
 
-IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif']
+IMG_EXTENSIONS = [".jpg", ".jpeg", ".png", ".ppm", ".bmp", ".pgm", ".tif"]
 
 
 def pil_loader(path):
@@ -196,13 +233,18 @@ def pil_loader(path):
         data = ZipReader.read(path)
         img = Image.open(io.BytesIO(data))
     else:
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             img = Image.open(f)
-    return img.convert('RGB')
+            img.load()
+            return img.convert("RGB")
+
+    return img.convert("RGB")
 
 
 def accimage_loader(path):
+    # not used
     import accimage
+
     try:
         return accimage.Image(path)
     except IOError:
@@ -212,7 +254,8 @@ def accimage_loader(path):
 
 def default_img_loader(path):
     from torchvision import get_image_backend
-    if get_image_backend() == 'accimage':
+
+    if get_image_backend() == "accimage":
         return accimage_loader(path)
     else:
         return pil_loader(path)
@@ -228,7 +271,7 @@ class ImageFolder(DatasetFolder):
         root/cat/asd932_.png
     Args:
         root (string): Root directory path.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
@@ -237,15 +280,32 @@ class ImageFolder(DatasetFolder):
         imgs (list): List of (image path, class_index) tuples
     """
 
-    def __init__(self, root, ann_file='', img_prefix='', transform=None, target_transform=None,
-                 loader=default_img_loader, cache_mode="no", dataset='ImageNet',
-                 two_crop=False, return_coord=False):
-        super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS,
-                                          ann_file=ann_file, img_prefix=img_prefix,
-                                          transform=transform, target_transform=target_transform,
-                                          cache_mode=cache_mode, dataset=dataset)
+    def __init__(
+        self,
+        root,
+        ann_file="",
+        img_prefix="",
+        transform=None,
+        target_transform=None,
+        loader=default_img_loader,
+        cache_mode="no",
+        dataset="ImageNet",
+        two_crop=False,
+        return_coord=False,
+    ):
+        super(ImageFolder, self).__init__(
+            root,
+            loader,
+            IMG_EXTENSIONS,
+            ann_file=ann_file,
+            img_prefix=img_prefix,
+            transform=transform,
+            target_transform=target_transform,
+            cache_mode=cache_mode,
+            dataset=dataset,
+        )
         self.imgs = self.samples
-        self.two_crop = two_crop
+        self.two_crop = two_crop  # True if using PixPro model
         self.return_coord = return_coord
 
     def __getitem__(self, index):
@@ -255,10 +315,13 @@ class ImageFolder(DatasetFolder):
         Returns:
             tuple: (image, target) where target is class_index of the target class.
         """
+
         path, target = self.samples[index]
         image = self.loader(path)
 
+        # FIXME: each image gets two crops. For MVTec, the #of images is not enough
         if self.transform is not None:
+            # perform 1st transform
             if isinstance(self.transform, tuple) and len(self.transform) == 2:
                 img = self.transform[0](image)
             else:
@@ -267,9 +330,11 @@ class ImageFolder(DatasetFolder):
             img = image
 
         if self.target_transform is not None:
+            # usually not called
             target = self.target_transform(target)
 
         if self.two_crop:
+            # perform 2nd transform
             if isinstance(self.transform, tuple) and len(self.transform) == 2:
                 img2 = self.transform[1](image)
             else:
