@@ -6,19 +6,11 @@ import torch.nn.functional as F
 import torch
 
 
-def me():
-    print("me")
+x = torch.randint(10, 1000, (32, 28, 7))
+print(x.transpose(1, 2))
+print(x)
+y = torch.bmm(x.transpose(1, 2), x)
 
-
-kou = None
-kai = ""
-
-
-if {"a": "b"}:
-    print("mymy")
-
-
-# x = torch.arange(0, 7, 1).view(-1, 1).repeat(1, 7)
 # print(x)
 # print(x.sum(dim=1))
 # # print(x.shape[-3])

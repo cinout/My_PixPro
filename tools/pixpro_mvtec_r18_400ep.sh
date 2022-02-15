@@ -18,7 +18,7 @@ python -m torch.distributed.launch --master_port 12348 --nproc_per_node=${number
     --crop 0.08 \
     --aug BYOL \
     --dataset MVTec \
-    --batch-size 32 \
+    --batch-size 8 \
     \
     --model PixPro \
     --arch resnet50 \

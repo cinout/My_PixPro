@@ -248,6 +248,8 @@ class PixPro(BaseModel):
         print(">>> step featprop 5:")
 
         # [N, H * W, H * W]
+        print(feat.transpose(1, 2))
+        print(feat)
         attention = torch.bmm(feat.transpose(1, 2), feat)
         print(">>> step featprop 5.1:")
         attention = torch.clamp(attention, min=self.pixpro_clamp_value)
