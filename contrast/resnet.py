@@ -284,14 +284,17 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        print(">>> step 1:")
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
+        print(">>> step 2:")
         c2 = self.layer1(x)
         c3 = self.layer2(c2)
         c4 = self.layer3(c3)
         c5 = self.layer4(c4)
+        print(">>> step 3:")
 
         if self.head_type == "multi_layer":
             return c2, c3, c4, c5

@@ -233,24 +233,35 @@ class PixPro(BaseModel):
 
         # Value transformation
         feat_value = self.value_transform(feat)
+        print(">>> step featprop 1:")
         feat_value = F.normalize(feat_value, dim=1)
+        print(">>> step featprop 2:")
         feat_value = feat_value.view(N, C, -1)
+        print(">>> step featprop 3:")
 
         # Similarity calculation
         feat = F.normalize(feat, dim=1)
+        print(">>> step featprop 4:")
 
         # [N, C, H * W]
         feat = feat.view(N, C, -1)
+        print(">>> step featprop 5:")
 
         # [N, H * W, H * W]
         attention = torch.bmm(feat.transpose(1, 2), feat)
+        print(">>> step featprop 5.1:")
         attention = torch.clamp(attention, min=self.pixpro_clamp_value)
+        print(">>> step featprop 5.2:")
         if self.pixpro_p < 1.0:
+            print(">>> step featprop 5.2.1:")
             attention = attention + 1e-6
+        print(">>> step featprop 5.3:")
         attention = attention**self.pixpro_p
+        print(">>> step featprop 6:")
 
         # [N, C, H * W]
         feat = torch.bmm(feat_value, attention.transpose(1, 2))
+        print(">>> step featprop 7:")
 
         return feat.view(N, C, H, W)
 
@@ -267,9 +278,13 @@ class PixPro(BaseModel):
         """
         # compute query features
         feat_1 = self.encoder(im_1)  # queries: NxC
+        print(">>> step 4:")
         proj_1 = self.projector(feat_1)
+        print(">>> step 5:")
         pred_1 = self.featprop(proj_1)
+        print(">>> step 6:")
         pred_1 = F.normalize(pred_1, dim=1)
+        print(">>> step 7:")
 
         feat_2 = self.encoder(im_2)
         proj_2 = self.projector(feat_2)
