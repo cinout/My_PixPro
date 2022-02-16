@@ -1,14 +1,30 @@
 import numpy as np
 import torch
-import torch.nn.functional as F
+from torchvision.transforms import functional as F
 import math, random
+from PIL import Image
 
-import torch
+path = "./data/mvtec/capsule/train/good/004.png"
 
-ratio = (3.0 / 4.0, 4.0 / 3.0)
-log_ratio = (math.log(ratio[0]), math.log(ratio[1]))
-aspect_ratio = math.exp(random.uniform(*log_ratio))
-print(aspect_ratio)
+resized_image_size = 512
+patch_size = 256
+patch_stride = 128
+images = []
+
+with open(path, "rb") as f:
+    img = Image.open(f)
+    img.load()
+    myimage = img.convert("RGB")
+    resized_image = myimage.resize((resized_image_size, resized_image_size))
+    top = 0
+    while top + patch_size <= resized_image_size:
+        left = 0
+        while left + patch_size <= resized_image_size:
+            patch = F.crop(resized_image, top, left, patch_size, patch_size)
+            patch.save(f"{top}{left}patch.png")
+            left += patch_stride
+        top += patch_stride
+
 
 # print(x)
 # print(x.sum(dim=1))
