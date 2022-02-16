@@ -270,11 +270,15 @@ class PixPro(BaseModel):
         """
         # compute query features
         feat_1 = self.encoder(im_1)  # queries: NxC
+        print(">>> im_1.shape,",im_1.shape)
+        print(">>> feat_1.shape,",feat_1.shape)
         proj_1 = self.projector(feat_1)
         pred_1 = self.featprop(proj_1)
         pred_1 = F.normalize(pred_1, dim=1)
 
         feat_2 = self.encoder(im_2)
+        print(">>> im_2.shape,",im_2.shape)
+        print(">>> feat_2.shape,",feat_2.shape)
         proj_2 = self.projector(feat_2)
         pred_2 = self.featprop(proj_2)
         pred_2 = F.normalize(pred_2, dim=1)
