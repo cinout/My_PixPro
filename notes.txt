@@ -1,2 +1,9 @@
-RUN pretrain:
+- RUN pretrain:
 $ python3 -m torch.distributed.launch  main_pretrain.py --model PixPro --local_rank 0
+
+- Two views are cropped using scale sampled from (0.08, 1.0)
+- The two views are both re-sized to a ﬁxed resolution (e.g., 224 × 224), following a random horizontal ﬂip, followed by color distortion, Gaussian blur, and a solarization operation.
+
+- From our experience, a "sqrt" scheduling method should be used to adjust the learning rate.
+As our default setting, the learning rate for batch size 1024 is: 1024 / 256 * 1 = 4.
+With sqrt scheduling, the learning rate for batch size 512 should be: 4 * sqrt(512 / 1024) = 2.828. We can modify the train script with '--base-lr 1.414' to achieve this.

@@ -1,15 +1,14 @@
 import numpy as np
 import torch
 import torch.nn.functional as F
-
+import math, random
 
 import torch
 
-
-x = torch.randint(10, 1000, (32, 28, 7))
-print(x.transpose(1, 2))
-print(x)
-y = torch.bmm(x.transpose(1, 2), x)
+ratio = (3.0 / 4.0, 4.0 / 3.0)
+log_ratio = (math.log(ratio[0]), math.log(ratio[1]))
+aspect_ratio = math.exp(random.uniform(*log_ratio))
+print(aspect_ratio)
 
 # print(x)
 # print(x.sum(dim=1))
