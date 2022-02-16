@@ -91,8 +91,7 @@ def regression_loss(q, k, coord_q, coord_k, pos_ratio=0.5):
     dist_center = (
         torch.sqrt(
             (center_q_x.view(-1, H * W, 1) - center_k_x.view(-1, 1, H * W)) ** 2
-            + (center_q_y.view(-1, H * W, 1) -
-               center_k_y.view(-1, 1, H * W)) ** 2
+            + (center_q_y.view(-1, H * W, 1) - center_k_y.view(-1, 1, H * W)) ** 2
         )
         / max_bin_diag
     )
@@ -103,13 +102,13 @@ def regression_loss(q, k, coord_q, coord_k, pos_ratio=0.5):
     # [bs, 49, 49]
     logit = torch.bmm(q.transpose(1, 2), k)
 
-    loss = (logit * pos_mask).sum(-1).sum(-1) / \
-        (pos_mask.sum(-1).sum(-1) + 1e-6)
+    loss = (logit * pos_mask).sum(-1).sum(-1) / (pos_mask.sum(-1).sum(-1) + 1e-6)
 
     return -2 * loss.mean()
 
 
-def Proj_Head(in_dim=2048, inner_dim=4096, out_dim=256):
+# FIXME: in_dim should be dynamic. 512 is for resnet18
+def Proj_Head(in_dim=512, inner_dim=4096, out_dim=256):
     return MLP2d(in_dim, inner_dim, out_dim)
 
 
@@ -172,8 +171,7 @@ class PixPro(BaseModel):
         elif self.pixpro_transform_layer == 1:
             self.value_transform = conv1x1(in_planes=256, out_planes=256)
         elif self.pixpro_transform_layer == 2:
-            self.value_transform = MLP2d(
-                in_dim=256, inner_dim=256, out_dim=256)
+            self.value_transform = MLP2d(in_dim=256, inner_dim=256, out_dim=256)
         else:
             raise NotImplementedError
 
@@ -204,8 +202,7 @@ class PixPro(BaseModel):
         """
         _contrast_momentum = (
             1.0
-            - (1.0 - self.pixpro_momentum) *
-            (np.cos(np.pi * self.k / self.K) + 1) / 2.0
+            - (1.0 - self.pixpro_momentum) * (np.cos(np.pi * self.k / self.K) + 1) / 2.0
         )
         self.k = self.k + 1
 
