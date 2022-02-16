@@ -263,22 +263,18 @@ class PixPro(BaseModel):
     def forward(self, im_1, im_2, coord1, coord2):
         """
         Input:
-            im_q: a batch of query images
+            im_q: a batch of query images, shape: [32, 3, 224, 224]
             im_k: a batch of key images
         Output:
             logits, targets
         """
         # compute query features
-        feat_1 = self.encoder(im_1)  # queries: NxC
-        print(">>> im_1.shape,",im_1.shape)
-        print(">>> feat_1.shape,",feat_1.shape)
+        feat_1 = self.encoder(im_1)  # shape: [32, 512, 7, 7]
         proj_1 = self.projector(feat_1)
         pred_1 = self.featprop(proj_1)
         pred_1 = F.normalize(pred_1, dim=1)
 
         feat_2 = self.encoder(im_2)
-        print(">>> im_2.shape,",im_2.shape)
-        print(">>> feat_2.shape,",feat_2.shape)
         proj_2 = self.projector(feat_2)
         pred_2 = self.featprop(proj_2)
         pred_2 = F.normalize(pred_2, dim=1)

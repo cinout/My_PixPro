@@ -2,6 +2,7 @@
 $ python3 -m torch.distributed.launch  main_pretrain.py --model PixPro --local_rank 0
 
 - Two views are cropped using scale sampled from (0.08, 1.0)
+
 - The two views are both re-sized to a ﬁxed resolution (e.g., 224 × 224), following a random horizontal ﬂip, followed by color distortion, Gaussian blur, and a solarization operation.
 
 - From our experience, a "sqrt" scheduling method should be used to adjust the learning rate.

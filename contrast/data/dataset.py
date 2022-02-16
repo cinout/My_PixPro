@@ -5,10 +5,15 @@ import time
 
 import torch.distributed as dist
 import torch.utils.data as data
+from torchvision.transforms import functional as F
 from PIL import Image
 from pycocotools.coco import COCO
 
 from .zipreader import is_zip_path, ZipReader
+
+resized_image_size = 680
+patch_size = 256
+patch_stride = 8
 
 
 def has_file_allowed_extension(filename, extensions):
@@ -36,7 +41,7 @@ def find_classes(dir):
     return classes, class_to_idx
 
 
-def make_dataset(dir, class_to_idx, extensions):
+def make_dataset(dir, class_to_idx, extensions, dataset, loader):
     """Find all the images
     Args:
 
@@ -54,9 +59,30 @@ def make_dataset(dir, class_to_idx, extensions):
             for fname in sorted(fnames):
                 if has_file_allowed_extension(fname, extensions):
                     path = os.path.join(root, fname)
-                    item = (path, class_to_idx[target])
-                    images.append(item)
+                    image = loader(path)
+                    target_index = class_to_idx[target]
+                    if dataset == "MVTec":
+                        resized_image = image.resize(
+                            (resized_image_size, resized_image_size)
+                        )
 
+                        top = 0
+                        while top + patch_size <= resized_image_size:
+                            left = 0
+                            while left + patch_size <= resized_image_size:
+                                patch = F.crop(
+                                    resized_image, top, left, patch_size, patch_size
+                                )
+                                item = (patch, target_index)
+                                images.append(item)
+                                left += patch_stride
+                            top += patch_stride
+
+                    else:
+                        item = (image, target_index)
+                        images.append(item)
+
+    print(len(images))
     return images
 
 
@@ -132,7 +158,7 @@ class DatasetFolder(data.Dataset):
         if ann_file == "":
             # folder mode
             _, class_to_idx = find_classes(root)
-            samples = make_dataset(root, class_to_idx, extensions)
+            samples = make_dataset(root, class_to_idx, extensions, dataset, loader)
 
         else:
             # zip mode
@@ -154,7 +180,7 @@ class DatasetFolder(data.Dataset):
         self.root = root
         self.loader = loader
         self.extensions = extensions
-        self.samples = samples  # list[tuple[filepath, folderIndex]], e.g., [('./data/mvtec/zipper/train/good/000.png', 0)]
+        self.samples = samples  # list[tuple[REAL_IMAGE, folderIndex]], e.g., [('./data/mvtec/zipper/train/good/000.png', 0)]
         self.labels = [y_1k for _, y_1k in samples]  # a list of 0s for MVTec
         self.classes = list(set(self.labels))
 
@@ -195,8 +221,7 @@ class DatasetFolder(data.Dataset):
             sample: image (read by loader)
             tuple: (sample, target) where target is class_index of the target class.
         """
-        path, target = self.samples[index]  # target: index of image class(folder)
-        sample = self.loader(path)
+        sample, target = self.samples[index]  # target: index of image class(folder)
         if self.transform is not None:
             sample = self.transform(sample)
         if self.target_transform is not None:
@@ -304,7 +329,6 @@ class ImageFolder(DatasetFolder):
             cache_mode=cache_mode,
             dataset=dataset,
         )
-        self.imgs = self.samples
         self.two_crop = two_crop  # True if using PixPro model
         self.return_coord = return_coord
 
@@ -316,10 +340,8 @@ class ImageFolder(DatasetFolder):
             tuple: (image, target) where target is class_index of the target class.
         """
 
-        path, target = self.samples[index]
-        image = self.loader(path)
+        image, target = self.samples[index]
 
-        # FIXME: each image gets two crops. For MVTec, the #of images is not enough
         if self.transform is not None:
             # perform 1st transform
             if isinstance(self.transform, tuple) and len(self.transform) == 2:
