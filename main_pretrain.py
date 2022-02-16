@@ -23,23 +23,23 @@ from contrast.lars import add_weight_decay, LARS
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-mvtec_categories=[
-            "capsule",
-            "bottle",
-            "carpet",
-            "leather",
-            "pill",
-            "transistor",
-            "tile",
-            "cable",
-            "zipper",
-            "toothbrush",
-            "metal_nut",
-            "hazelnut",
-            "screw",
-            "grid",
-            "wood",
-        ]
+mvtec_categories = [
+    "capsule",
+    "bottle",
+    "carpet",
+    "leather",
+    "pill",
+    "transistor",
+    "tile",
+    "cable",
+    "zipper",
+    "toothbrush",
+    "metal_nut",
+    "hazelnut",
+    "screw",
+    "grid",
+    "wood",
+]
 
 
 def build_model(args):
@@ -114,7 +114,9 @@ def save_checkpoint(args, epoch, model, optimizer, scheduler, sampler=None):
         else f"ckpt_epoch_{epoch}.pth",
     )
     torch.save(state, file_name)
-    copyfile(file_name, os.path.join(args.output_dir, "current.pth"))
+    copyfile(
+        file_name, os.path.join(args.output_dir, f"current_{args.mvtec_category}.pth")
+    )
 
 
 def main(args):
@@ -138,7 +140,9 @@ def main(args):
         assert os.path.isfile(args.pretrained_model)
         load_pretrained(model, args.pretrained_model)
     if args.auto_resume:
-        resume_file = os.path.join(args.output_dir, "current.pth")
+        resume_file = os.path.join(
+            args.output_dir, f"current_{args.mvtec_category}.pth"
+        )
         if os.path.exists(resume_file):
             logger.info(f"auto resume from {resume_file}")
             args.resume = resume_file
@@ -245,11 +249,9 @@ if __name__ == "__main__":
         "\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(opt)).items()))
     )
 
-    if opt.dataset=="MVTec" and opt.mvtec_category=="all":
+    if opt.dataset == "MVTec" and opt.mvtec_category == "all":
         for category in mvtec_categories:
-            opt.mvtec_category=category
+            opt.mvtec_category = category
             main(opt)
     else:
         main(opt)
-    
-    
