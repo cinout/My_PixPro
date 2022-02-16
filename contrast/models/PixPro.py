@@ -248,7 +248,9 @@ class PixPro(BaseModel):
         attention = torch.clamp(attention, min=self.pixpro_clamp_value)
         if self.pixpro_p < 1.0:
             attention = attention + 1e-6
-        attention = attention**self.pixpro_p
+        attention = (
+            attention**self.pixpro_p
+        )  # pixpro_p is the sharpness hyperparameter
 
         # [N, C, H * W]
         feat = torch.bmm(feat_value, attention.transpose(1, 2))

@@ -213,7 +213,7 @@ def parse_option(stage="pre-train"):
         help="timestamp for current pre-training",
     )
 
-    # PixPro arguments
+    # PixPro arguments (i.e. PixPro is only used in pre-train stage)
     if stage == "pre-train":
         parser.add_argument("--pixpro-p", type=float, default=1.0)
         parser.add_argument(

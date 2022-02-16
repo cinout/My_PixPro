@@ -27,8 +27,8 @@ python -m torch.distributed.launch --master_port 12347 --nproc_per_node=${number
     --optimizer lars \
     --base-lr 1.0 \
     --weight-decay 1e-5 \
-    --warmup-epoch 2 \
-    --epochs 5 \
+    --warmup-epoch 5 \
+    --epochs 100 \
     --amp-opt-level O1 \
     \
     --save-freq 10 \
@@ -38,6 +38,6 @@ python -m torch.distributed.launch --master_port 12347 --nproc_per_node=${number
     --pixpro-momentum 0.99 \
     --pixpro-pos-ratio 0.7 \
     --pixpro-transform-layer 1 \
-    --pixpro-ins-loss-weight 0. \
+    --pixpro-ins-loss-weight 0.5 \
     \
     --mvtec_category all
