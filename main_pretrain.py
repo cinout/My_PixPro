@@ -136,14 +136,14 @@ def main(args):
         summary_writer = None
 
     for epoch in range(args.start_epoch, args.epochs + 1):
+        print(">>>epoch:",epoch)
         if isinstance(train_loader.sampler, DistributedSampler):
             train_loader.sampler.set_epoch(epoch)
 
         train(epoch, train_loader, model, optimizer,
               scheduler, args, summary_writer)
 
-        print("dist.get_rank() == 0:", dist.get_rank() == 0)
-        print(epoch)
+
         if dist.get_rank() == 0 and (
             epoch % args.save_freq == 0 or epoch == args.epochs
         ):
