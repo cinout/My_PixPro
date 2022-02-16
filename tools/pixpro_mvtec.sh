@@ -5,7 +5,7 @@ set -x
 
 number_of_processes=1
 data_dir="./data/mvtec/"
-output_dir="./output/pixpro_mvtec_r18_100ep"
+output_dir="./output/pixpro_mvtec"
 
 
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 
