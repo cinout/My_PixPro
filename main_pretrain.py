@@ -115,7 +115,13 @@ def save_checkpoint(args, epoch, model, optimizer, scheduler, sampler=None):
     )
     torch.save(state, file_name)
     copyfile(
-        file_name, os.path.join(args.output_dir, f"current_{args.mvtec_category}.pth")
+        file_name,
+        os.path.join(
+            args.output_dir,
+            f"current_{args.mvtec_category}.pth"
+            if args.dataset == "MVTec"
+            else "current.pth",
+        ),
     )
 
 
@@ -141,7 +147,10 @@ def main(args):
         load_pretrained(model, args.pretrained_model)
     if args.auto_resume:
         resume_file = os.path.join(
-            args.output_dir, f"current_{args.mvtec_category}.pth"
+            args.output_dir,
+            f"current_{args.mvtec_category}.pth"
+            if args.dataset == "MVTec"
+            else "current.pth",
         )
         if os.path.exists(resume_file):
             logger.info(f"auto resume from {resume_file}")

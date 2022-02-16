@@ -42,7 +42,6 @@ class GradualWarmupScheduler(_LRScheduler):
         if epoch > self.warmup_epoch:
             self.after_scheduler.step(epoch - self.warmup_epoch)
         else:
-            print(epoch)
             super(GradualWarmupScheduler, self).step(epoch)
 
     def state_dict(self):
