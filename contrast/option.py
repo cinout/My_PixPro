@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime
 
 from contrast import resnet
 from contrast.util import MyHelpFormatter
@@ -29,12 +30,10 @@ def parse_option(stage="pre-train"):
         "--aug",
         type=str,
         default="NULL",
-        choices=["NULL", "InstDisc", "MoCov2",
-                 "SimCLR", "RandAug", "BYOL", "val"],
+        choices=["NULL", "InstDisc", "MoCov2", "SimCLR", "RandAug", "BYOL", "val"],
         help="which augmentation to use.",
     )
-    parser.add_argument("--zip", action="store_true",
-                        help="use zipped dataset")
+    parser.add_argument("--zip", action="store_true", help="use zipped dataset")
     parser.add_argument(
         "--cache-mode",
         type=str,
@@ -52,10 +51,8 @@ def parse_option(stage="pre-train"):
         ],
         help="dataset type",
     )
-    parser.add_argument("--ann-file", type=str,
-                        default="", help="annotation file")
-    parser.add_argument("--image-size", type=int,
-                        default=224, help="image crop size")
+    parser.add_argument("--ann-file", type=str, default="", help="annotation file")
+    parser.add_argument("--image-size", type=int, default=224, help="image crop size")
     parser.add_argument(
         "--num-workers", type=int, default=4, help="num of workers per GPU to use"
     )
@@ -79,6 +76,7 @@ def parse_option(stage="pre-train"):
             "screw",
             "grid",
             "wood",
+            "all",
         ],
         help="mvtec image category",
     )
@@ -127,7 +125,6 @@ def parse_option(stage="pre-train"):
         parser.add_argument(
             "--learning-rate", type=float, default=30, help="learning rate"
         )
-
     parser.add_argument(
         "--optimizer",
         type=str,
@@ -142,8 +139,7 @@ def parse_option(stage="pre-train"):
         choices=["step", "cosine"],
         help="learning rate scheduler",
     )
-    parser.add_argument("--warmup-epoch", type=int,
-                        default=5, help="warmup epoch")
+    parser.add_argument("--warmup-epoch", type=int, default=5, help="warmup epoch")
     parser.add_argument(
         "--warmup-multiplier", type=int, default=100, help="warmup multiplier"
     )
@@ -166,8 +162,7 @@ def parse_option(stage="pre-train"):
         default=1e-4 if stage == "pre-train" else 0,
         help="weight decay",
     )
-    parser.add_argument("--momentum", type=float,
-                        default=0.9, help="momentum for SGD")
+    parser.add_argument("--momentum", type=float, default=0.9, help="momentum for SGD")
     parser.add_argument(
         "--amp-opt-level",
         type=str,
@@ -175,8 +170,7 @@ def parse_option(stage="pre-train"):
         choices=["O0", "O1", "O2"],
         help="mixed precision opt level, if O0, no amp is used",
     )
-    parser.add_argument("--start-epoch", type=int,
-                        default=1, help="used for resume")
+    parser.add_argument("--start-epoch", type=int, default=1, help="used for resume")
     parser.add_argument(
         "--epochs", type=int, default=100, help="number of training epochs"
     )
@@ -195,10 +189,8 @@ def parse_option(stage="pre-train"):
         metavar="PATH",
         help="path to latest checkpoint",
     )
-    parser.add_argument("--print-freq", type=int,
-                        default=10, help="print frequency")
-    parser.add_argument("--save-freq", type=int,
-                        default=10, help="save frequency")
+    parser.add_argument("--print-freq", type=int, default=10, help="print frequency")
+    parser.add_argument("--save-freq", type=int, default=10, help="save frequency")
     parser.add_argument(
         "--local_rank",
         type=int,
@@ -209,12 +201,17 @@ def parse_option(stage="pre-train"):
         parser.add_argument(
             "--pretrained-model", type=str, required=True, help="pretrained model path"
         )
-        parser.add_argument(
-            "-e", "--eval", action="store_true", help="only evaluate")
+        parser.add_argument("-e", "--eval", action="store_true", help="only evaluate")
     else:
         parser.add_argument(
             "--pretrained-model", type=str, default="", help="pretrained model path"
         )
+    parser.add_argument(
+        "--timestamp",
+        type=str,
+        default=datetime.now().strftime("%Y%m%d-%H%M%S"),
+        help="timestamp for current pre-training",
+    )
 
     # PixPro arguments
     if stage == "pre-train":

@@ -1,5 +1,6 @@
 import json
 import os
+from sqlite3 import Timestamp
 import time
 from shutil import copyfile
 
@@ -21,6 +22,24 @@ from contrast.lars import add_weight_decay, LARS
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+
+mvtec_categories=[
+            "capsule",
+            "bottle",
+            "carpet",
+            "leather",
+            "pill",
+            "transistor",
+            "tile",
+            "cable",
+            "zipper",
+            "toothbrush",
+            "metal_nut",
+            "hazelnut",
+            "screw",
+            "grid",
+            "wood",
+        ]
 
 
 def build_model(args):
@@ -61,8 +80,7 @@ def load_pretrained(model, pretrained_model):
 
     model_dict.update(state_dict)
     model.load_state_dict(model_dict)
-    logger.info(
-        f"==> loaded checkpoint '{pretrained_model}' (epoch {ckpt['epoch']})")
+    logger.info(f"==> loaded checkpoint '{pretrained_model}' (epoch {ckpt['epoch']})")
 
 
 def load_checkpoint(args, model, optimizer, scheduler, sampler=None):
@@ -74,8 +92,7 @@ def load_checkpoint(args, model, optimizer, scheduler, sampler=None):
     optimizer.load_state_dict(checkpoint["optimizer"])
     scheduler.load_state_dict(checkpoint["scheduler"])
 
-    logger.info(
-        f"=> loaded successfully '{args.resume}' (epoch {checkpoint['epoch']})")
+    logger.info(f"=> loaded successfully '{args.resume}' (epoch {checkpoint['epoch']})")
 
     del checkpoint
     torch.cuda.empty_cache()
@@ -90,7 +107,12 @@ def save_checkpoint(args, epoch, model, optimizer, scheduler, sampler=None):
         "scheduler": scheduler.state_dict(),
         "epoch": epoch,
     }
-    file_name = os.path.join(args.output_dir, f"ckpt_epoch_{epoch}.pth")
+    file_name = os.path.join(
+        args.output_dir,
+        f"ckpt_{args.mvtec_category}_epoch_{epoch}.pth"
+        if args.dataset == "MVTec"
+        else f"ckpt_epoch_{epoch}.pth",
+    )
     torch.save(state, file_name)
     copyfile(file_name, os.path.join(args.output_dir, "current.pth"))
 
@@ -126,8 +148,7 @@ def main(args):
             )
     if args.resume:
         assert os.path.isfile(args.resume)
-        load_checkpoint(args, model, optimizer, scheduler,
-                        sampler=train_loader.sampler)
+        load_checkpoint(args, model, optimizer, scheduler, sampler=train_loader.sampler)
 
     # tensorboard
     if dist.get_rank() == 0:
@@ -136,13 +157,11 @@ def main(args):
         summary_writer = None
 
     for epoch in range(args.start_epoch, args.epochs + 1):
-        print(">>>epoch:",epoch)
+        logger.info(f">>> epoch: {epoch}")
         if isinstance(train_loader.sampler, DistributedSampler):
             train_loader.sampler.set_epoch(epoch)
 
-        train(epoch, train_loader, model, optimizer,
-              scheduler, args, summary_writer)
-
+        train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer)
 
         if dist.get_rank() == 0 and (
             epoch % args.save_freq == 0 or epoch == args.epochs
@@ -204,23 +223,33 @@ if __name__ == "__main__":
         torch.device(opt.local_rank)
     torch.distributed.init_process_group(backend="gloo", init_method="env://")
     cudnn.benchmark = True
+    opt.output_dir = opt.output_dir + "_" + opt.timestamp
 
     # setup logger
     os.makedirs(opt.output_dir, exist_ok=True)
 
     logger = setup_logger(
-        output=opt.output_dir, distributed_rank=dist.get_rank(), name="contrast"
+        output=opt.output_dir,
+        distributed_rank=dist.get_rank(),
+        name="contrast",
+        timestamp=opt.timestamp,
     )
     if dist.get_rank() == 0:
-        path = os.path.join(opt.output_dir, "config.json")
+        path = os.path.join(opt.output_dir, f"config_{opt.timestamp}.json")
         with open(path, "w") as f:
             json.dump(vars(opt), f, indent=2)
         logger.info("Full config saved to {}".format(path))
 
     # print args
     logger.info(
-        "\n".join("%s: %s" % (k, str(v))
-                  for k, v in sorted(dict(vars(opt)).items()))
+        "\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(opt)).items()))
     )
 
-    main(opt)
+    if opt.dataset=="MVTec" and opt.mvtec_category=="all":
+        for category in mvtec_categories:
+            opt.mvtec_category=category
+            main(opt)
+    else:
+        main(opt)
+    
+    
