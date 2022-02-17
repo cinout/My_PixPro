@@ -9,7 +9,7 @@ output_dir="./output/pixpro_mvtec"
 
 
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 
-python -m torch.distributed.launch --master_port 12348 --nproc_per_node=${number_of_processes} \
+python -m torch.distributed.launch --master_port 12346 --nproc_per_node=${number_of_processes} \
     main_pretrain.py \
     --data-dir ${data_dir} \
     --output-dir ${output_dir} \
@@ -25,8 +25,8 @@ python -m torch.distributed.launch --master_port 12348 --nproc_per_node=${number
     --head-type early_return \
     \
     --optimizer lars \
-    --base-lr 1.0 \
-    --weight-decay 1e-5 \
+    --base-lr 0.01 \
+    --weight-decay 0.0003 \
     --warmup-epoch 5 \
     --epochs 100 \
     --amp-opt-level O1 \
@@ -40,4 +40,4 @@ python -m torch.distributed.launch --master_port 12348 --nproc_per_node=${number
     --pixpro-transform-layer 1 \
     --pixpro-ins-loss-weight 0.5 \
     \
-    --mvtec_category all
+    --mvtec_category all 

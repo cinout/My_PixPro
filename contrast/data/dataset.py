@@ -13,7 +13,7 @@ from .zipreader import is_zip_path, ZipReader
 
 resized_image_size = 512
 patch_size = 256
-patch_stride = 32
+patch_stride = 128
 
 
 def has_file_allowed_extension(filename, extensions):
@@ -82,7 +82,6 @@ def make_dataset(dir, class_to_idx, extensions, dataset, loader):
                         item = (image, target_index)
                         images.append(item)
 
-    print(len(images))
     return images
 
 
