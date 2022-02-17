@@ -13,7 +13,7 @@ from .zipreader import is_zip_path, ZipReader
 
 resized_image_size = 512
 patch_size = 256
-patch_stride = 32
+patch_stride = 128
 
 
 def has_file_allowed_extension(filename, extensions):

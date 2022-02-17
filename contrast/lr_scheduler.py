@@ -74,6 +74,7 @@ class GradualWarmupScheduler(_LRScheduler):
 
 def get_scheduler(optimizer, n_iter_per_epoch, args):
     if "cosine" in args.lr_scheduler:
+        # default one
         scheduler = CosineAnnealingLR(
             optimizer=optimizer,
             eta_min=0.000001,
