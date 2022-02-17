@@ -9,13 +9,15 @@ from contrast import resnet
 from density import GaussianDensityTorch
 from tensorboard_visualizer import TensorboardVisualizer
 from mvtec_dataloader import MVTecDRAEMTestDataset, MVTecDRAEMTrainDataset
+import timeit 
+
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 resized_image_size = 512
 patch_size = 224  # (288) keep consistent with pre-training
-train_patch_stride = patch_size  # 9 * 9
+train_patch_stride = 6
 test_patch_stride = 6  # 49 * 49 = 2401
 
 location_args = {
@@ -107,6 +109,7 @@ def eval_on_device(categories):
 
         print(len(patch_images_by_location))
         print(patch_images_by_location[0].shape)
+        start_time = timeit.default_timer()
 
         patch_embeddings_by_location = [
             encoder(i.to(device)).mean(dim=(-2, -1)) for i in patch_images_by_location
@@ -114,6 +117,8 @@ def eval_on_device(categories):
 
         print(len(patch_embeddings_by_location))
         print(patch_embeddings_by_location[0].shape)
+        elapsed = timeit.default_timer() - start_time
+        print(elapsed)
 
         exit()
         # fit GDE
