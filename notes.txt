@@ -8,3 +8,7 @@ $ python3 -m torch.distributed.launch  main_pretrain.py --model PixPro --local_r
 - From our experience, a "sqrt" scheduling method should be used to adjust the learning rate.
 As our default setting, the learning rate for batch size 1024 is: 1024 / 256 * 1 = 4.
 With sqrt scheduling, the learning rate for batch size 512 should be: 4 * sqrt(512 / 1024) = 2.828. We can modify the train script with '--base-lr 1.414' to achieve this.
+
+- check with DA_contrastive paper, plus optimizer, refer to "run.sh" file in their repo
+# --num_epoch=2048 \ --batch_size=64 \ --weight_decay=0.0003 \ --learning_rate=0.01 \ --net_type=ResNet18 \
+# --input_shape=32,32,3 \ --sched_type=cos \  --sched_freq=epoch \

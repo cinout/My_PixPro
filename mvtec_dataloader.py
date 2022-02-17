@@ -60,7 +60,7 @@ class MVTecDRAEMTestDataset(Dataset):
 
         if base_dir == "good":
             image, mask = self.transform_image(img_path, None)
-            has_anomaly = np.array([0], dtype=np.float32)
+            has_anomaly = np.array(0, dtype=np.float32)
         else:
             # e.g., mask_path: ./datasets/mvtec/capsule/ground_truth/
             mask_path = os.path.join(dir_path, "../../ground_truth/")
@@ -71,7 +71,7 @@ class MVTecDRAEMTestDataset(Dataset):
             # e.g., mask_path: ./datasets/mvtec/capsule/ground_truth/crack/000_mask.png
             mask_path = os.path.join(mask_path, mask_file_name)
             image, mask = self.transform_image(img_path, mask_path)
-            has_anomaly = np.array([1], dtype=np.float32)
+            has_anomaly = np.array(1, dtype=np.float32)
 
         sample = {
             "image": image,
