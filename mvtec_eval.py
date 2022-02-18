@@ -198,15 +198,17 @@ def eval_on_device(categories, args: Namespace):
                     else torch.cat((scores, scores_batch), dim=0)
                 )
 
-            image_level_pred = torch.max(scores).detach().numpy()
+            image_level_pred = torch.max(scores).cpu().detach().numpy()
 
             image_level_gt_list.append(image_level_gt)
             image_level_pred_list.append(image_level_pred)
-        
-        image_level_auroc = roc_auc_score(np.array(image_level_gt_list),np.array(image_level_pred_list))
+
+        image_level_auroc = roc_auc_score(
+            np.array(image_level_gt_list), np.array(image_level_pred_list)
+        )
         print("===========")
         print(category)
-        print("Image Level AUROC:",image_level_auroc)
+        print("Image Level AUROC:", image_level_auroc)
 
 
 if __name__ == "__main__":
