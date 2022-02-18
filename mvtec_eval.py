@@ -61,7 +61,7 @@ def eval_on_device(categories, args: Namespace):
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
     output_file = open(
-        os.path.join(location_args["log"], f"eval_results_{timestamp}.txt")
+        os.path.join(location_args["log"], f"eval_results_{timestamp}.txt"), "a"
     )
     output_file.write(f"NOTE: {args.note}\n\n\n")
     output_file.write(f"density estimator: {args.density}\n")
