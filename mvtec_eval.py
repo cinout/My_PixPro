@@ -1,3 +1,4 @@
+from argparse import Namespace
 import os
 import torch
 import numpy as np
@@ -53,7 +54,7 @@ category_list = [
 ]
 
 
-def eval_on_device(categories):
+def eval_on_device(categories, args: Namespace):
     if not os.path.exists(location_args["log"]):
         os.makedirs(location_args["log"])
 
@@ -119,14 +120,16 @@ def eval_on_device(categories):
             train_embeddings, p=2, dim=1
         )  # l2-normalized
 
-        kde_gamma = 10.0 / (
-            torch.var(train_embeddings, unbiased=False) * train_embeddings.shape[1]
-        )
-
-        # fit GDE
-        # print(">>> fit GDE")
-        # gde_estimator = GaussianDensityTorch()
-        # gde_estimator.fit(train_embeddings)
+        # choose density estimator
+        if args.density == "kde":
+            print(">>> estimator: kde")
+            kde_gamma = 10.0 / (
+                torch.var(train_embeddings, unbiased=False) * train_embeddings.shape[1]
+            )
+        elif args.density == "gde":
+            print(">>> estimator: gde")
+            gde_estimator = GaussianDensityTorch()
+            gde_estimator.fit(train_embeddings)
 
         print(">>> get embeddings from test dataset")
         # get test dataset
@@ -150,7 +153,7 @@ def eval_on_device(categories):
             test_image = info_batched["image"].to(device)[0]  # shape: 3*x*y
             patches_raw = test_image.unfold(1, patch_size, test_patch_stride).unfold(
                 2, patch_size, test_patch_stride
-            )  # shape: [3, 49, 49, 224, 224], assume get # 49*49=100 crops
+            )  # shape: [3, crop_row, crop_column, patch_size, patch_size]
 
             _, num_crop_row, num_crop_col, _, _ = patches_raw.shape
 
@@ -161,7 +164,7 @@ def eval_on_device(categories):
             ]
 
             num_iter = int(np.ceil(len(all_patches) / processing_batch))
-            scores = None
+            scores = None  # anomaly score for all cropped patches
             for i in range(num_iter):
                 test_patches = torch.stack(
                     all_patches[i * processing_batch : (i + 1) * processing_batch]
@@ -170,23 +173,27 @@ def eval_on_device(categories):
                 test_embeddings = torch.nn.functional.normalize(
                     test_embeddings, p=2, dim=1
                 )
-                similarity_batch = torch.matmul(
-                    test_embeddings, train_embeddings.transpose(0, 1)
-                )
-                scores_batch = (
-                    -torch.logsumexp(2 * kde_gamma * similarity_batch, dim=1)
-                    / kde_gamma
-                )
+
+                if args.density == "kde":
+                    similarity_batch = torch.matmul(
+                        test_embeddings, train_embeddings.transpose(0, 1)
+                    )
+                    scores_batch = (
+                        -torch.logsumexp(2 * kde_gamma * similarity_batch, dim=1)
+                        / kde_gamma
+                    )
+                elif args.density == "gde":
+                    scores_batch = gde_estimator.predict(test_embeddings, device)
+
                 scores = (
                     scores_batch
                     if scores is None
                     else torch.cat((scores, scores_batch), dim=0)
                 )
 
-            # distances = gde_estimator.predict(test_embeddings, device)
             print(scores.shape)
+            print(scores[1000:2000])
 
-            # test_feature_batch = encoder(test_image_batch).mean(dim=(-2, -1))
             exit()
 
 
@@ -194,7 +201,22 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--category", action="store", type=str, required=True)
+    parser.add_argument(
+        "--category",
+        action="store",
+        type=str,
+        required=True,
+        help="MVTec category type",
+    )
+    parser.add_argument(
+        "--density",
+        action="store",
+        default="kde",
+        choices=["kde", "gde"],
+        type=str,
+        required=True,
+        help="choice of density estimator",
+    )
 
     parsed_args = parser.parse_args()
 
@@ -205,4 +227,4 @@ if __name__ == "__main__":
     )
 
     with torch.no_grad():
-        eval_on_device(picked_classes)
+        eval_on_device(picked_classes, parsed_args)
