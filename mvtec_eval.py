@@ -64,6 +64,7 @@ def eval_on_device(categories, args: Namespace):
         os.path.join(location_args["log"], f"eval_results_{timestamp}.txt")
     )
     output_file.write(f"NOTE: {args.note}\n\n\n")
+    output_file.write(f"density estimator: {args.density}\n")
     output_file.write(f"resized_image_size: {resized_image_size}\n")
     output_file.write(f"patch_size: {patch_size}\n")
     output_file.write(f"train_patch_stride: {train_patch_stride}\n")
@@ -97,7 +98,6 @@ def eval_on_device(categories, args: Namespace):
         encoder.eval()  # set model to eval mode
 
         # get embeddings from training dataset
-        print(">>> get embeddings from training dataset")
         train_dataset = MVTecDRAEMTrainDataset(
             os.path.join(location_args["mvtec_dataset"], category, "train/good/"),
             resize_shape=[resized_image_size, resized_image_size],
@@ -139,16 +139,13 @@ def eval_on_device(categories, args: Namespace):
 
         # choose density estimator
         if args.density == "kde":
-            print(">>> estimator: kde")
             kde_gamma = 10.0 / (
                 torch.var(train_embeddings, unbiased=False) * train_embeddings.shape[1]
             )
         elif args.density == "gde":
-            print(">>> estimator: gde")
             gde_estimator = GaussianDensityTorch()
             gde_estimator.fit(train_embeddings)
 
-        print(">>> get embeddings from test dataset")
         # get test dataset
         test_dataset = MVTecDRAEMTestDataset(
             os.path.join(location_args["mvtec_dataset"], category, "test/"),
