@@ -19,7 +19,7 @@ python -m torch.distributed.launch --master_port 12346 --nproc_per_node=${number
     --aug BYOL \
     --dataset MVTec \
     --batch-size 64 \
-    --image_size 32 \
+    --image-size 32 \
     --resized_image_size 256 \
     --crop_patch_size 128 \
     --crop_patch_stride 64 \
