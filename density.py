@@ -10,7 +10,7 @@ class GaussianDensityTorch(object):
     def fit(self, embeddings, device):
         self.mean = torch.mean(embeddings, axis=0)
         self.inv_cov = torch.Tensor(
-            LedoitWolf().fit(embeddings).precision_, device=device
+            LedoitWolf().fit(embeddings.cpu()).precision_, device=device
         )
 
     def predict(self, embeddings):
