@@ -13,6 +13,7 @@ import timeit
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+processing_batch = 128  # batch size for obtaining embeddings from patches
 
 resized_image_size = 512
 patch_size = 224  # (288) keep consistent with pre-training
@@ -87,17 +88,13 @@ def eval_on_device(categories):
             train_dataset, batch_size=train_batch_size, shuffle=True
         )
 
-        # stacked_patches = []
-
         for info_batched in train_dataloader:
             train_image_batch = info_batched["image"].to(device)  # shape: bs*3*x*y
-            bs, _, _, _ = train_image_batch.shape
-
             patches_raw = train_image_batch.unfold(
                 2, patch_size, train_patch_stride
             ).unfold(
                 3, patch_size, train_patch_stride
-            )  # shape: [bs, 3, 49, 49, 224, 224], assume get # 10*10=100 crops
+            )  # shape: [bs, 3, 49, 49, 224, 224], assume get # 49*49=100 crops
 
             bs, _, num_crop_row, num_crop_col, _, _ = patches_raw.shape
 
@@ -107,57 +104,21 @@ def eval_on_device(categories):
                 for j in range(num_crop_row)
                 for k in range(num_crop_col)
             ]
-
-            #             patches_reshaped = patches_raw.reshape(
-            #                 bs, 3, -1, patch_size, patch_size
-            #             )  # shape: [bs, 3, 100, 224, 224], assume get # 10*10=100 crops
-
-            # stacked_patches.append(patches_raw)
             break  # only use the first 10 shuffled images
-        process_batch_size = 128
-        num_iter = int(np.ceil(len(all_patches) / process_batch_size))
-        train_embeds = []
+
+        num_iter = int(np.ceil(len(all_patches) / processing_batch))
+        embeds = []
         for i in range(num_iter):
             train_patches = torch.stack(
-                all_patches[i * process_batch_size : (i + 1) * process_batch_size]
+                all_patches[i * processing_batch : (i + 1) * processing_batch]
             )
-            train_embeds.append(encoder(train_patches.to(device)).mean(dim=(-2, -1)))
-        train_embeddings = torch.cat(train_embeds)
-        print(train_embeddings.shape)
-        print(train_embeddings[0])
+            embeds.append(encoder(train_patches.to(device)).mean(dim=(-2, -1)))
+        train_embeddings = torch.cat(embeds)
+        train_embeddings = torch.nn.functional.normalize(train_embeddings, p=2, dim=1)
 
-        # print(len(stacked_patches))
-        # print(stacked_patches[0].shape)
-
-        # patches_all = torch.cat(
-        #     stacked_patches, dim=0
-        # )  # shape: (#test_samples, 3, #crops, 224, 224)
-
-        # _, _, num_patches_row, num_patches_column, _, _ = patches_all.shape
-
-        # patch_images_by_location = [
-        #     patches_all[:, :, i, j, :, :]
-        #     for i in range(num_patches_row)
-        #     for j in range(num_patches_column)
-        # ]  # length = #crops
-
-        # print(len(patch_images_by_location))
-        # print(patch_images_by_location[0].shape)
-        # start_time = timeit.default_timer()
-
-        # patch_embeddings_by_location = [
-        #     encoder(i.to(device)).mean(dim=(-2, -1)) for i in patch_images_by_location
-        # ]  # length = #crops; each element shape: (#samples, 512), where 512 is #feature_maps of resnet18
-
-        # print(len(patch_embeddings_by_location))
-        # print(patch_embeddings_by_location[0].shape)
-        # elapsed = timeit.default_timer() - start_time
-        # print(elapsed)
-
-        exit()
         # fit GDE
         gde_estimator = GaussianDensityTorch()
-        gde_estimator.fit(train_embed)
+        gde_estimator.fit(train_embeddings)
 
         # get test dataset
         test_dataset = MVTecDRAEMTestDataset(
@@ -172,18 +133,37 @@ def eval_on_device(categories):
         anomaly_image_score_prediction = []  # image-level predicted anomaly score [0,1]
 
         for i_batch, info_batched in enumerate(test_dataloader):
-
-            test_image_batch = info_batched["image"].to(device)  # shape: bs*3*x*y
-
             is_normal = (
                 info_batched["has_anomaly"].detach().numpy()[0]
             )  # is_normal: 1.0 or 0.0
-
             true_mask = info_batched["mask"]  # shape: bs*1*x*y
 
-            test_feature_batch = encoder(test_image_batch)
+            test_image = info_batched["image"].to(device)[0]  # shape: 3*x*y
+            patches_raw = test_image.unfold(1, patch_size, test_patch_stride).unfold(
+                2, patch_size, test_patch_stride
+            )  # shape: [3, 49, 49, 224, 224], assume get # 49*49=100 crops
 
-            print(test_feature_batch.shape)
+            _, num_crop_row, num_crop_col, _, _ = patches_raw.shape
+
+            all_patches = [
+                patches_raw[:, i, j, :, :]
+                for i in range(num_crop_row)
+                for j in range(num_crop_col)
+            ]
+
+            num_iter = int(np.ceil(len(all_patches) / processing_batch))
+            embeds = []
+            for i in range(num_iter):
+                test_patches = torch.stack(
+                    all_patches[i * processing_batch : (i + 1) * processing_batch]
+                )
+                embeds.append(encoder(test_patches.to(device)).mean(dim=(-2, -1)))
+            test_embeddings = torch.cat(embeds)
+            test_embeddings = torch.nn.functional.normalize(test_embeddings, p=2, dim=1)
+            distances = gde_estimator.predict(test_embeddings)
+            print(distances.shape)
+
+            # test_feature_batch = encoder(test_image_batch).mean(dim=(-2, -1))
             exit()
 
 

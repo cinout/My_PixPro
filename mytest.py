@@ -1,18 +1,21 @@
+from this import d
 import numpy as np
 import torch
 from torchvision.transforms import functional as F
 import math, random
 from PIL import Image
 
-aa = torch.tensor([[1, 2], [3, 4]])
+
 bb = torch.cat(
     [
-        torch.tensor([[1, 2], [3, 4]]),
-        torch.tensor([[1, 2], [3, 4]]),
-        torch.tensor([[1, 2], [3, 4]]),
+        torch.tensor([[1, 2], [3, 4]], dtype=torch.float32),
+        torch.tensor([[1, 2], [3, 4]], dtype=torch.float32),
+        torch.tensor([[1, 2], [3, 4]], dtype=torch.float32),
     ]
 )
-print(bb.shape)
+print(bb)
+embeds = torch.nn.functional.normalize(bb, p=2, dim=1)
+print(embeds)
 
 # path = "./data/mvtec/capsule/train/good/004.png"
 
