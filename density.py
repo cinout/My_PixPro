@@ -7,14 +7,16 @@ class GaussianDensityTorch(object):
     The code of Ripple et al. can be found here: https://github.com/ORippler/gaussian-ad-mvtec.
     """
 
-    def fit(self, embeddings, device):
+    def fit(self, embeddings):
         self.mean = torch.mean(embeddings, axis=0)
         self.inv_cov = torch.Tensor(
-            LedoitWolf().fit(embeddings.cpu()).precision_, device=device
+            LedoitWolf().fit(embeddings.cpu()).precision_, device="cpu"
         )
 
-    def predict(self, embeddings):
-        distances = self.mahalanobis_distance(embeddings, self.mean, self.inv_cov)
+    def predict(self, embeddings, device):
+        distances = self.mahalanobis_distance(
+            embeddings.to(device), self.mean.to(device), self.inv_cov.to(device)
+        )
         return distances
 
     @staticmethod

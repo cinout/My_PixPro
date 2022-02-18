@@ -120,8 +120,9 @@ def eval_on_device(categories):
         # fit GDE
         print(">>> fit GDE")
         gde_estimator = GaussianDensityTorch()
-        gde_estimator.fit(train_embeddings, device)
+        gde_estimator.fit(train_embeddings)
 
+        print(">>> get embeddings from test dataset")
         # get test dataset
         test_dataset = MVTecDRAEMTestDataset(
             os.path.join(location_args["mvtec_dataset"], category, "test/"),
@@ -162,7 +163,7 @@ def eval_on_device(categories):
                 embeds.append(encoder(test_patches.to(device)).mean(dim=(-2, -1)))
             test_embeddings = torch.cat(embeds)
             test_embeddings = torch.nn.functional.normalize(test_embeddings, p=2, dim=1)
-            distances = gde_estimator.predict(test_embeddings)
+            distances = gde_estimator.predict(test_embeddings, device)
             print(distances.shape)
 
             # test_feature_batch = encoder(test_image_batch).mean(dim=(-2, -1))
