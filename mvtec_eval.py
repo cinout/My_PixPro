@@ -2,16 +2,15 @@ from argparse import Namespace
 import os
 import torch
 import numpy as np
-import sys
 from torch.utils.data import DataLoader
 from torch import optim
 from sklearn.metrics import roc_auc_score
 import torch.nn as nn
 from contrast import resnet
 from density import GaussianDensityTorch
-from tensorboard_visualizer import TensorboardVisualizer
 from mvtec_dataloader import MVTecDRAEMTestDataset, MVTecDRAEMTrainDataset
 import timeit
+from datetime import datetime
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -58,6 +57,21 @@ category_list = [
 def eval_on_device(categories, args: Namespace):
     if not os.path.exists(location_args["log"]):
         os.makedirs(location_args["log"])
+
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    output_file = open(
+        os.path.join(location_args["log"], f"eval_results_{timestamp}.txt")
+    )
+    output_file.write(f"NOTE: {args.note}\n\n\n")
+    output_file.write(f"resized_image_size: {resized_image_size}\n")
+    output_file.write(f"patch_size: {patch_size}\n")
+    output_file.write(f"train_patch_stride: {train_patch_stride}\n")
+    output_file.write(f"test_patch_stride: {test_patch_stride}\n")
+    output_file.write(f"train_batch_size: {train_batch_size}\n")
+
+    print("*************************")
+    output_file.write("*************************\n\n\n")
 
     image_level_auroc_all_categories = []
 
@@ -211,13 +225,19 @@ def eval_on_device(categories, args: Namespace):
         )
 
         image_level_auroc_all_categories.append(image_level_auroc)
-        print("===========")
-        print(category)
-        print("Image Level AUROC:", image_level_auroc)
 
+        print(f"Image Level AUROC - {category}:", image_level_auroc)
+        output_file.write(f"Image Level AUROC - {category}: {image_level_auroc}\n")
+        print("===========")
+        output_file.write("======================\n")
+
+    output_file.write("\n\n\n")
     image_level_auroc_mean = np.mean(np.array(image_level_auroc_all_categories))
-    print("*************************")
     print("Image Level AUROC - Mean (15 classes):", image_level_auroc_mean)
+    output_file.write(
+        f"Image Level AUROC - Mean (15 classes): {image_level_auroc_mean}\n"
+    )
+    output_file.close()
 
 
 if __name__ == "__main__":
@@ -239,6 +259,13 @@ if __name__ == "__main__":
         type=str,
         required=True,
         help="choice of density estimator",
+    )
+    parser.add_argument(
+        "--note",
+        action="store",
+        type=str,
+        required=True,
+        help="any personal note for this evaluation",
     )
 
     parsed_args = parser.parse_args()
