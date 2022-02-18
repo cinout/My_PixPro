@@ -5,7 +5,7 @@ import math, random
 from PIL import Image
 
 aa = torch.tensor([[1, 2], [3, 4]])
-bb = torch.stack(
+bb = torch.cat(
     [
         torch.tensor([[1, 2], [3, 4]]),
         torch.tensor([[1, 2], [3, 4]]),

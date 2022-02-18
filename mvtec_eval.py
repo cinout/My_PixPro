@@ -116,12 +116,15 @@ def eval_on_device(categories):
             break  # only use the first 10 shuffled images
         process_batch_size = 128
         num_iter = int(np.ceil(len(all_patches) / process_batch_size))
+        train_embeds = []
         for i in range(num_iter):
             train_patches = torch.stack(
                 all_patches[i * process_batch_size : (i + 1) * process_batch_size]
             )
-            train_embeddings = encoder(train_patches.to(device)).mean(dim=(-2, -1))
-            print(train_embeddings.shape)
+            train_embeds.append(encoder(train_patches.to(device)).mean(dim=(-2, -1)))
+        train_embeddings = torch.cat(train_embeds)
+        print(train_embeddings.shape)
+        print(train_embeddings[0])
 
         # print(len(stacked_patches))
         # print(stacked_patches[0].shape)
