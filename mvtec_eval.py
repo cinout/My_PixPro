@@ -15,10 +15,19 @@ import timeit
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-resized_image_size = 512
-patch_size = 224  # (288) keep consistent with pre-training
-train_patch_stride = 6
-test_patch_stride = 6  # 49 * 49 = 2401
+# resized_image_size = 512
+# patch_size = 224  # (288) keep consistent with pre-training
+# train_patch_stride = 6 # 6:(49*49=2401) | 32:(10*10=100) | 96:(4*4=16)
+# test_patch_stride = 6  # 49 * 49 = 2401
+# train_batch_size = 64
+
+resized_image_size = 256
+patch_size = 32  # (224) keep consistent with pre-training
+
+train_patch_stride = 4  # 4:(57*57=3249)
+test_patch_stride = 4
+
+train_batch_size = 64
 
 location_args = {
     "pretrained_model": "./output/pixpro_mvtec/",
@@ -47,7 +56,6 @@ category_list = [
 
 
 def eval_on_device(categories):
-
     if not os.path.exists(location_args["log"]):
         os.makedirs(location_args["log"])
 
@@ -77,7 +85,8 @@ def eval_on_device(categories):
             os.path.join(location_args["mvtec_dataset"], category, "train/good/"),
             resize_shape=[resized_image_size, resized_image_size],
         )
-        train_dataloader = DataLoader(train_dataset, batch_size=100, shuffle=False)
+        
+        train_dataloader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=False)
 
         stacked_patches = []
 
@@ -91,20 +100,22 @@ def eval_on_device(categories):
                 3, patch_size, train_patch_stride
             )  # shape: [bs, 3, 10, 10, 224, 224], assume get # 10*10=100 crops
 
-            patches_reshaped = patches_raw.reshape(
-                bs, 3, -1, patch_size, patch_size
-            )  # shape: [bs, 3, 100, 224, 224], assume get # 10*10=100 crops
+#             patches_reshaped = patches_raw.reshape(
+#                 bs, 3, -1, patch_size, patch_size
+#             )  # shape: [bs, 3, 100, 224, 224], assume get # 10*10=100 crops
 
-            stacked_patches.append(patches_reshaped)
+            stacked_patches.append(patches_raw)
+        print(len(stacked_patches))
+        print(stacked_patches[0].shape)
 
         patches_all = torch.cat(
-            stacked_patches
+            stacked_patches, dim=0
         )  # shape: (#test_samples, 3, #crops, 224, 224)
 
-        _, _, num_patches, _, _ = patches_all.shape
+        _, _, num_patches_row, num_patches_column, _, _ = patches_all.shape
 
         patch_images_by_location = [
-            patches_all[:, :, i, :, :] for i in range(num_patches)
+            patches_all[:, :, i, j, :, :] for i in range(num_patches_row) for j in range(num_patches_column)
         ]  # length = #crops
 
         print(len(patch_images_by_location))
