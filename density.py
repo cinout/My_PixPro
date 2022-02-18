@@ -1,15 +1,16 @@
 from sklearn.covariance import LedoitWolf
 import torch
 
+
 class GaussianDensityTorch(object):
     """Gaussian Density estimation similar to the implementation used by Ripple et al.
     The code of Ripple et al. can be found here: https://github.com/ORippler/gaussian-ad-mvtec.
     """
 
-    def fit(self, embeddings):
+    def fit(self, embeddings, device):
         self.mean = torch.mean(embeddings, axis=0)
         self.inv_cov = torch.Tensor(
-            LedoitWolf().fit(embeddings.cpu()).precision_, device="cpu"
+            LedoitWolf().fit(embeddings).precision_, device=device
         )
 
     def predict(self, embeddings):

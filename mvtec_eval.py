@@ -79,6 +79,7 @@ def eval_on_device(categories):
         encoder.eval()  # set model to eval mode
 
         # get embeddings from training dataset
+        print(">>> get embeddings from training dataset")
         train_dataset = MVTecDRAEMTrainDataset(
             os.path.join(location_args["mvtec_dataset"], category, "train/good/"),
             resize_shape=[resized_image_size, resized_image_size],
@@ -117,8 +118,9 @@ def eval_on_device(categories):
         train_embeddings = torch.nn.functional.normalize(train_embeddings, p=2, dim=1)
 
         # fit GDE
+        print(">>> fit GDE")
         gde_estimator = GaussianDensityTorch()
-        gde_estimator.fit(train_embeddings)
+        gde_estimator.fit(train_embeddings, device)
 
         # get test dataset
         test_dataset = MVTecDRAEMTestDataset(
