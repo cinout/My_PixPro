@@ -115,12 +115,18 @@ def eval_on_device(categories):
             )
             embeds.append(encoder(train_patches.to(device)).mean(dim=(-2, -1)))
         train_embeddings = torch.cat(embeds)
-        train_embeddings = torch.nn.functional.normalize(train_embeddings, p=2, dim=1)
+        train_embeddings = torch.nn.functional.normalize(
+            train_embeddings, p=2, dim=1
+        )  # l2-normalized
+
+        kde_gamma = 10.0 / (
+            torch.var(train_embeddings, unbiased=False) * train_embeddings.shape[1]
+        )
 
         # fit GDE
-        print(">>> fit GDE")
-        gde_estimator = GaussianDensityTorch()
-        gde_estimator.fit(train_embeddings)
+        # print(">>> fit GDE")
+        # gde_estimator = GaussianDensityTorch()
+        # gde_estimator.fit(train_embeddings)
 
         print(">>> get embeddings from test dataset")
         # get test dataset
@@ -155,16 +161,30 @@ def eval_on_device(categories):
             ]
 
             num_iter = int(np.ceil(len(all_patches) / processing_batch))
-            embeds = []
+            scores = None
             for i in range(num_iter):
                 test_patches = torch.stack(
                     all_patches[i * processing_batch : (i + 1) * processing_batch]
                 )
-                embeds.append(encoder(test_patches.to(device)).mean(dim=(-2, -1)))
-            test_embeddings = torch.cat(embeds)
-            test_embeddings = torch.nn.functional.normalize(test_embeddings, p=2, dim=1)
-            distances = gde_estimator.predict(test_embeddings, device)
-            print(distances.shape)
+                test_embeddings = encoder(test_patches.to(device)).mean(dim=(-2, -1))
+                test_embeddings = torch.nn.functional.normalize(
+                    test_embeddings, p=2, dim=1
+                )
+                similarity_batch = torch.matmul(
+                    test_embeddings, train_embeddings.transpose(0, 1)
+                )
+                scores_batch = (
+                    -torch.logsumexp(2 * kde_gamma * similarity_batch, dim=1)
+                    / kde_gamma
+                )
+                scores = (
+                    scores_batch
+                    if scores is None
+                    else torch.cat((scores, scores_batch), dim=0)
+                )
+
+            # distances = gde_estimator.predict(test_embeddings, device)
+            print(scores.shape)
 
             # test_feature_batch = encoder(test_image_batch).mean(dim=(-2, -1))
             exit()

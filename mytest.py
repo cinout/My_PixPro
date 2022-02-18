@@ -6,17 +6,11 @@ import math, random
 from PIL import Image
 
 
-bb = torch.cat(
-    [
-        torch.tensor([[1, 2], [3, 4]], dtype=torch.float32),
-        torch.tensor([[1, 2], [3, 4]], dtype=torch.float32),
-        torch.tensor([[1, 2], [3, 4]], dtype=torch.float32),
-    ]
-)
-print(bb)
-embeds = torch.nn.functional.normalize(bb, p=2, dim=1)
-print(embeds)
+x = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
 
+print(torch.var(x, unbiased=False))
+print(torch.var(x, 0, unbiased=False))
+print(torch.var(x, 1, unbiased=False))
 
 # path = "./data/mvtec/capsule/train/good/004.png"
 
