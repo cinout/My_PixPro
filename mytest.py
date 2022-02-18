@@ -4,15 +4,15 @@ from torchvision.transforms import functional as F
 import math, random
 from PIL import Image
 
-count = 10
-
-
-def myfunc():
-    count = count + 1
-    print(count)
-
-
-myfunc()
+aa = torch.tensor([[1, 2], [3, 4]])
+bb = torch.stack(
+    [
+        torch.tensor([[1, 2], [3, 4]]),
+        torch.tensor([[1, 2], [3, 4]]),
+        torch.tensor([[1, 2], [3, 4]]),
+    ]
+)
+print(bb.shape)
 
 # path = "./data/mvtec/capsule/train/good/004.png"
 
