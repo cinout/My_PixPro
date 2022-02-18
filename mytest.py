@@ -17,6 +17,7 @@ print(bb)
 embeds = torch.nn.functional.normalize(bb, p=2, dim=1)
 print(embeds)
 
+
 # path = "./data/mvtec/capsule/train/good/004.png"
 
 # resized_image_size = 512

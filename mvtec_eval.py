@@ -15,17 +15,17 @@ import timeit
 device = "cuda" if torch.cuda.is_available() else "cpu"
 processing_batch = 128  # batch size for obtaining embeddings from patches
 
-resized_image_size = 512
-patch_size = 224  # (288) keep consistent with pre-training
-train_patch_stride = 6  # 6:(49*49=2401) | 32:(10*10=100) | 96:(4*4=16)
-test_patch_stride = 6  # 49 * 49 = 2401
-train_batch_size = 10
+# resized_image_size = 512
+# patch_size = 224  # (288) keep consistent with pre-training
+# train_patch_stride = 6  # 6:(49*49=2401) | 32:(10*10=100) | 96:(4*4=16)
+# test_patch_stride = 6  # 49 * 49 = 2401
+# train_batch_size = 10
 
-# resized_image_size = 256
-# patch_size = 32  # (224) keep consistent with pre-training
-# train_patch_stride = 4  # 4:(57*57=3249)
-# test_patch_stride = 4
-# train_batch_size = 64
+resized_image_size = 256
+patch_size = 32  # (224) keep consistent with pre-training
+train_patch_stride = 4  # 4:(57*57=3249)
+test_patch_stride = 4
+train_batch_size = 10
 
 location_args = {
     "pretrained_model": "./output/pixpro_mvtec/",
