@@ -11,10 +11,6 @@ from pycocotools.coco import COCO
 
 from .zipreader import is_zip_path, ZipReader
 
-resized_image_size = 512
-patch_size = 256
-patch_stride = 128
-
 
 def has_file_allowed_extension(filename, extensions):
     """Checks if a file is an allowed extension.
@@ -41,7 +37,16 @@ def find_classes(dir):
     return classes, class_to_idx
 
 
-def make_dataset(dir, class_to_idx, extensions, dataset, loader):
+def make_dataset(
+    dir,
+    class_to_idx,
+    extensions,
+    dataset,
+    loader,
+    resized_image_size=256,
+    crop_patch_size=128,
+    crop_patch_stride=64,
+):
     """Find all the images
     Args:
 
@@ -67,16 +72,20 @@ def make_dataset(dir, class_to_idx, extensions, dataset, loader):
                         )
 
                         top = 0
-                        while top + patch_size <= resized_image_size:
+                        while top + crop_patch_size <= resized_image_size:
                             left = 0
-                            while left + patch_size <= resized_image_size:
+                            while left + crop_patch_size <= resized_image_size:
                                 patch = F.crop(
-                                    resized_image, top, left, patch_size, patch_size
+                                    resized_image,
+                                    top,
+                                    left,
+                                    crop_patch_size,
+                                    crop_patch_size,
                                 )
                                 item = (patch, target_index)
                                 images.append(item)
-                                left += patch_stride
-                            top += patch_stride
+                                left += crop_patch_stride
+                            top += crop_patch_stride
 
                     else:
                         item = (image, target_index)
@@ -152,12 +161,24 @@ class DatasetFolder(data.Dataset):
         target_transform=None,
         cache_mode="no",
         dataset="ImageNet",
+        resized_image_size=256,
+        crop_patch_size=128,
+        crop_patch_stride=64,
     ):
 
         if ann_file == "":
             # folder mode
             _, class_to_idx = find_classes(root)
-            samples = make_dataset(root, class_to_idx, extensions, dataset, loader)
+            samples = make_dataset(
+                root,
+                class_to_idx,
+                extensions,
+                dataset,
+                loader,
+                resized_image_size=resized_image_size,
+                crop_patch_size=crop_patch_size,
+                crop_patch_stride=crop_patch_stride,
+            )
 
         else:
             # zip mode
@@ -316,6 +337,9 @@ class ImageFolder(DatasetFolder):
         dataset="ImageNet",
         two_crop=False,
         return_coord=False,
+        resized_image_size=256,
+        crop_patch_size=128,
+        crop_patch_stride=64,
     ):
         super(ImageFolder, self).__init__(
             root,
@@ -327,6 +351,9 @@ class ImageFolder(DatasetFolder):
             target_transform=target_transform,
             cache_mode=cache_mode,
             dataset=dataset,
+            resized_image_size=resized_image_size,
+            crop_patch_size=crop_patch_size,
+            crop_patch_stride=crop_patch_stride,
         )
         self.two_crop = two_crop  # True if using PixPro model
         self.return_coord = return_coord

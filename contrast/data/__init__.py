@@ -54,6 +54,9 @@ def get_loader(aug_type, args, two_crop=False, prefix="train", return_coord=Fals
                 two_crop=two_crop,
                 return_coord=return_coord,
                 dataset=args.dataset,
+                resized_image_size=args.resized_image_size,
+                crop_patch_size=args.crop_patch_size,
+                crop_patch_stride=args.crop_patch_stride,
             )
 
     # sampler

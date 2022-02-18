@@ -52,7 +52,10 @@ def parse_option(stage="pre-train"):
         help="dataset type",
     )
     parser.add_argument("--ann-file", type=str, default="", help="annotation file")
-    parser.add_argument("--image-size", type=int, default=224, help="image crop size")
+    parser.add_argument("--image-size", type=int, default=32, help="image crop size")
+    parser.add_argument("--resized_image_size", type=int, default=256, help="from original image size to resized one")
+    parser.add_argument("--crop_patch_size", type=int, default=128, help="image crop size")
+    parser.add_argument("--crop_patch_stride", type=int, default=64, help="image crop stride")
     parser.add_argument(
         "--num-workers", type=int, default=4, help="num of workers per GPU to use"
     )
