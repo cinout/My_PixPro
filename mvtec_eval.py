@@ -5,6 +5,7 @@ import numpy as np
 import sys
 from torch.utils.data import DataLoader
 from torch import optim
+from sklearn.metrics import roc_auc_score
 import torch.nn as nn
 from contrast import resnet
 from density import GaussianDensityTorch
@@ -141,13 +142,19 @@ def eval_on_device(categories, args: Namespace):
             test_dataset, batch_size=1, shuffle=False, num_workers=0
         )
 
-        anomaly_image_score_gt = []  # image-level ground-truth anomaly score [0,1]
-        anomaly_image_score_prediction = []  # image-level predicted anomaly score [0,1]
+        image_level_gt_list = []  # image-level ground-truth anomaly score [0,1]
+        image_level_pred_list = []  # image-level predicted anomaly score
 
         for i_batch, info_batched in enumerate(test_dataloader):
-            is_normal = (
+            # each iteration is for one image
+            print(
+                f">>> item index: {i_batch}/{len(test_dataset)}",
+            )
+
+            image_level_gt = (
                 info_batched["has_anomaly"].detach().numpy()[0]
             )  # is_normal: 1.0 or 0.0
+
             true_mask = info_batched["mask"]  # shape: bs*1*x*y
 
             test_image = info_batched["image"].to(device)[0]  # shape: 3*x*y
@@ -191,10 +198,15 @@ def eval_on_device(categories, args: Namespace):
                     else torch.cat((scores, scores_batch), dim=0)
                 )
 
-            print(scores.shape)
-            print(scores[1000:2000])
+            image_level_pred = torch.max(scores).detach().numpy()
 
-            exit()
+            image_level_gt_list.append(image_level_gt)
+            image_level_pred_list.append(image_level_pred)
+        
+        image_level_auroc = roc_auc_score(np.array(image_level_gt_list),np.array(image_level_pred_list))
+        print("===========")
+        print(category)
+        print("Image Level AUROC:",image_level_auroc)
 
 
 if __name__ == "__main__":
