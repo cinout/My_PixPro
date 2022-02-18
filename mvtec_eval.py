@@ -59,6 +59,8 @@ def eval_on_device(categories, args: Namespace):
     if not os.path.exists(location_args["log"]):
         os.makedirs(location_args["log"])
 
+    image_level_auroc_all_categories = []
+
     for category in categories:
 
         checkpoint = torch.load(
@@ -147,9 +149,10 @@ def eval_on_device(categories, args: Namespace):
 
         for i_batch, info_batched in enumerate(test_dataloader):
             # each iteration is for one image
-            print(
-                f">>> item index: {i_batch}/{len(test_dataset)}",
-            )
+            if i_batch % 20 == 0:
+                print(
+                    f">>> item index: {i_batch}/{len(test_dataset)}",
+                )
 
             image_level_gt = (
                 info_batched["has_anomaly"].detach().numpy()[0]
@@ -206,9 +209,15 @@ def eval_on_device(categories, args: Namespace):
         image_level_auroc = roc_auc_score(
             np.array(image_level_gt_list), np.array(image_level_pred_list)
         )
+
+        image_level_auroc_all_categories.append(image_level_auroc)
         print("===========")
         print(category)
         print("Image Level AUROC:", image_level_auroc)
+
+    image_level_auroc_mean = np.mean(np.array(image_level_auroc_all_categories))
+    print("*************************")
+    print("Image Level AUROC - Mean (15 classes):", image_level_auroc_mean)
 
 
 if __name__ == "__main__":
@@ -225,7 +234,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--density",
         action="store",
-        default="kde",
+        default="gde",
         choices=["kde", "gde"],
         type=str,
         required=True,
