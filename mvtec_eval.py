@@ -9,25 +9,22 @@ from contrast import resnet
 from density import GaussianDensityTorch
 from tensorboard_visualizer import TensorboardVisualizer
 from mvtec_dataloader import MVTecDRAEMTestDataset, MVTecDRAEMTrainDataset
-import timeit 
-
+import timeit
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# resized_image_size = 512
-# patch_size = 224  # (288) keep consistent with pre-training
-# train_patch_stride = 6 # 6:(49*49=2401) | 32:(10*10=100) | 96:(4*4=16)
-# test_patch_stride = 6  # 49 * 49 = 2401
+resized_image_size = 512
+patch_size = 224  # (288) keep consistent with pre-training
+train_patch_stride = 6  # 6:(49*49=2401) | 32:(10*10=100) | 96:(4*4=16)
+test_patch_stride = 6  # 49 * 49 = 2401
+train_batch_size = 10
+
+# resized_image_size = 256
+# patch_size = 32  # (224) keep consistent with pre-training
+# train_patch_stride = 4  # 4:(57*57=3249)
+# test_patch_stride = 4
 # train_batch_size = 64
-
-resized_image_size = 256
-patch_size = 32  # (224) keep consistent with pre-training
-
-train_patch_stride = 4  # 4:(57*57=3249)
-test_patch_stride = 4
-
-train_batch_size = 64
 
 location_args = {
     "pretrained_model": "./output/pixpro_mvtec/",
@@ -85,10 +82,12 @@ def eval_on_device(categories):
             os.path.join(location_args["mvtec_dataset"], category, "train/good/"),
             resize_shape=[resized_image_size, resized_image_size],
         )
-        
-        train_dataloader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=False)
 
-        stacked_patches = []
+        train_dataloader = DataLoader(
+            train_dataset, batch_size=train_batch_size, shuffle=True
+        )
+
+        # stacked_patches = []
 
         for info_batched in train_dataloader:
             train_image_batch = info_batched["image"].to(device)  # shape: bs*3*x*y
@@ -98,38 +97,53 @@ def eval_on_device(categories):
                 2, patch_size, train_patch_stride
             ).unfold(
                 3, patch_size, train_patch_stride
-            )  # shape: [bs, 3, 10, 10, 224, 224], assume get # 10*10=100 crops
+            )  # shape: [bs, 3, 49, 49, 224, 224], assume get # 10*10=100 crops
 
-#             patches_reshaped = patches_raw.reshape(
-#                 bs, 3, -1, patch_size, patch_size
-#             )  # shape: [bs, 3, 100, 224, 224], assume get # 10*10=100 crops
+            bs, _, num_crop_row, num_crop_col, _, _ = patches_raw.shape
 
-            stacked_patches.append(patches_raw)
-        print(len(stacked_patches))
-        print(stacked_patches[0].shape)
+            all_patches = [
+                patches_raw[i, :, j, k, :, :]
+                for i in range(bs)
+                for j in range(num_crop_row)
+                for k in range(num_crop_col)
+            ]
 
-        patches_all = torch.cat(
-            stacked_patches, dim=0
-        )  # shape: (#test_samples, 3, #crops, 224, 224)
+            #             patches_reshaped = patches_raw.reshape(
+            #                 bs, 3, -1, patch_size, patch_size
+            #             )  # shape: [bs, 3, 100, 224, 224], assume get # 10*10=100 crops
 
-        _, _, num_patches_row, num_patches_column, _, _ = patches_all.shape
+            # stacked_patches.append(patches_raw)
+            break  # only use the first 10 shuffled images
+        print(len(all_patches))
+        print(all_patches[0].shape)
 
-        patch_images_by_location = [
-            patches_all[:, :, i, j, :, :] for i in range(num_patches_row) for j in range(num_patches_column)
-        ]  # length = #crops
+        # print(len(stacked_patches))
+        # print(stacked_patches[0].shape)
 
-        print(len(patch_images_by_location))
-        print(patch_images_by_location[0].shape)
-        start_time = timeit.default_timer()
+        # patches_all = torch.cat(
+        #     stacked_patches, dim=0
+        # )  # shape: (#test_samples, 3, #crops, 224, 224)
 
-        patch_embeddings_by_location = [
-            encoder(i.to(device)).mean(dim=(-2, -1)) for i in patch_images_by_location
-        ]  # length = #crops; each element shape: (#samples, 512), where 512 is #feature_maps of resnet18
+        # _, _, num_patches_row, num_patches_column, _, _ = patches_all.shape
 
-        print(len(patch_embeddings_by_location))
-        print(patch_embeddings_by_location[0].shape)
-        elapsed = timeit.default_timer() - start_time
-        print(elapsed)
+        # patch_images_by_location = [
+        #     patches_all[:, :, i, j, :, :]
+        #     for i in range(num_patches_row)
+        #     for j in range(num_patches_column)
+        # ]  # length = #crops
+
+        # print(len(patch_images_by_location))
+        # print(patch_images_by_location[0].shape)
+        # start_time = timeit.default_timer()
+
+        # patch_embeddings_by_location = [
+        #     encoder(i.to(device)).mean(dim=(-2, -1)) for i in patch_images_by_location
+        # ]  # length = #crops; each element shape: (#samples, 512), where 512 is #feature_maps of resnet18
+
+        # print(len(patch_embeddings_by_location))
+        # print(patch_embeddings_by_location[0].shape)
+        # elapsed = timeit.default_timer() - start_time
+        # print(elapsed)
 
         exit()
         # fit GDE
