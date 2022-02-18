@@ -42,6 +42,6 @@ python -m torch.distributed.launch --master_port 12346 --nproc_per_node=${number
     --pixpro-momentum 0.99 \
     --pixpro-pos-ratio 0.7 \
     --pixpro-transform-layer 1 \
-    --pixpro-ins-loss-weight 0.5 \
+    --pixpro-ins-loss-weight 1 \
     \
     --mvtec_category all 

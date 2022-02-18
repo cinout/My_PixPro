@@ -193,7 +193,7 @@ class PixPro(BaseModel):
             # nn.SyncBatchNorm.convert_sync_batchnorm(self.projector_instance_k)
             # nn.SyncBatchNorm.convert_sync_batchnorm(self.predictor)
 
-            self.avgpool = nn.AvgPool2d(7, stride=1)
+            self.avgpool = nn.AvgPool2d(1 if args.image_size == 32 else 7, stride=1)
 
     @torch.no_grad()
     def _momentum_update_key_encoder(self):
