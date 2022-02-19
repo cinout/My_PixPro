@@ -265,6 +265,7 @@ def eval_on_device(categories, args: Namespace):
             image_level_pred = torch.max(scores).cpu().detach().numpy()
             image_level_gt_list.append(image_level_gt)
             image_level_pred_list.append(image_level_pred)
+            print("image_level_gt:", image_level_gt)
 
             # pixel-level upsampling
             upsampled_scores = receptive_upsample(
