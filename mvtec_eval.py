@@ -172,13 +172,13 @@ def eval_on_device(categories, args: Namespace):
 
             break  # only use the first #train_batch_size shuffled images
 
-        num_iter = int(np.ceil(len(all_patches) / processing_batch))
-        embeds = []
-        for i in range(num_iter):
-            train_patches = torch.stack(
-                all_patches[i * processing_batch : (i + 1) * processing_batch]
-            )
-            embeds.append(encoder(train_patches.to(device)).mean(dim=(-2, -1)))
+        # num_iter = int(np.ceil(len(all_patches) / processing_batch))
+        # embeds = []
+        # for i in range(num_iter):
+        #     train_patches = torch.stack(
+        #         all_patches[i * processing_batch : (i + 1) * processing_batch]
+        #     )
+        #     embeds.append(encoder(train_patches.to(device)).mean(dim=(-2, -1)))
 
         for key, value in train_patches_by_index_dict.items():
             print(f">>> train: {key}")
