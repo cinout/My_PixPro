@@ -118,6 +118,7 @@ def eval_on_device(categories, args: Namespace):
     output_file.write("*************************\n\n\n")
 
     image_level_auroc_all_categories = []
+    pixel_level_auroc_all_categories = []
 
     for category in categories:
 
@@ -284,30 +285,35 @@ def eval_on_device(categories, args: Namespace):
                 * resized_image_size
             ] = (upsampled_scores.detach().numpy().flatten())
 
-            print(len(pixel_level_gt_list))
-            print(len(pixel_level_pred_list))
-            print("------------------")
-            print(pixel_level_gt_list)
-            print(pixel_level_pred_list)
 
-            exit()
 
         image_level_auroc = roc_auc_score(
             np.array(image_level_gt_list), np.array(image_level_pred_list)
         )
+        pixel_level_auroc = roc_auc_score(
+            np.array(pixel_level_gt_list), np.array(pixel_level_pred_list)
+        )
 
         image_level_auroc_all_categories.append(image_level_auroc)
+        pixel_level_auroc_all_categories.append(pixel_level_auroc)
 
         print(f"Image Level AUROC - {category}:", image_level_auroc)
+        print(f"Pixel Level AUROC - {category}:", pixel_level_auroc)
         output_file.write(f"Image Level AUROC - {category}: {image_level_auroc}\n")
+        output_file.write(f"Pixel Level AUROC - {category}: {pixel_level_auroc}\n")
         print("===========")
         output_file.write("======================\n")
 
     output_file.write("\n\n\n")
     image_level_auroc_mean = np.mean(np.array(image_level_auroc_all_categories))
+    pixel_level_auroc_mean = np.mean(np.array(pixel_level_auroc_all_categories))
     print("Image Level AUROC - Mean (15 classes):", image_level_auroc_mean)
+    print("Pixel Level AUROC - Mean (15 classes):", pixel_level_auroc_mean)
     output_file.write(
         f"Image Level AUROC - Mean (15 classes): {image_level_auroc_mean}\n"
+    )
+    output_file.write(
+        f"Pixel Level AUROC - Mean (15 classes): {pixel_level_auroc_mean}\n"
     )
     output_file.close()
 
