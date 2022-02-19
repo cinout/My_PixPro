@@ -24,21 +24,21 @@ from contrast.lars import add_weight_decay, LARS
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 mvtec_categories = [
-    "capsule",
-    "bottle",
     "carpet",
-    "leather",
-    "pill",
-    "transistor",
-    "tile",
-    "cable",
-    "zipper",
-    "toothbrush",
-    "metal_nut",
-    "hazelnut",
-    "screw",
     "grid",
+    "leather",
+    "tile",
     "wood",
+    "bottle",
+    "cable",
+    "capsule",
+    "hazelnut",
+    "metal_nut",
+    "pill",
+    "screw",
+    "toothbrush",
+    "transistor",
+    "zipper",
 ]
 
 

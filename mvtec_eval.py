@@ -37,21 +37,21 @@ location_args = {
 
 # mvtec dataset categories
 category_list = [
-    "capsule",
-    "bottle",
     "carpet",
-    "leather",
-    "pill",
-    "transistor",
-    "tile",
-    "cable",
-    "zipper",
-    "toothbrush",
-    "metal_nut",
-    "hazelnut",
-    "screw",
     "grid",
+    "leather",
+    "tile",
     "wood",
+    "bottle",
+    "cable",
+    "capsule",
+    "hazelnut",
+    "metal_nut",
+    "pill",
+    "screw",
+    "toothbrush",
+    "transistor",
+    "zipper",
 ]
 
 
