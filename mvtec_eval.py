@@ -283,9 +283,7 @@ def eval_on_device(categories, args: Namespace):
                 * resized_image_size : (i_batch + 1)
                 * resized_image_size
                 * resized_image_size
-            ] = (upsampled_scores.detach().numpy().flatten())
-
-
+            ] = (upsampled_scores.cpu().detach().numpy().flatten())
 
         image_level_auroc = roc_auc_score(
             np.array(image_level_gt_list), np.array(image_level_pred_list)
