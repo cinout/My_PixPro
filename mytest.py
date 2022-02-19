@@ -1,4 +1,3 @@
-from this import d
 import numpy as np
 import torch
 from torchvision.transforms import functional as F
@@ -6,11 +5,18 @@ import math, random
 from PIL import Image
 
 
-x = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
+x = torch.tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
 
-print(torch.var(x, unbiased=False))
-print(torch.var(x, 0, unbiased=False))
-print(torch.var(x, 1, unbiased=False))
+num_crop_row, num_crop_col = x.shape
+
+all_elements = torch.stack(
+    [x[i, j] for i in range(num_crop_row) for j in range(num_crop_col)]
+)
+
+z = all_elements.reshape((num_crop_row, num_crop_col)).unsqueeze(0).unsqueeze(0)
+
+print(z.shape)
+print(z)
 
 # path = "./data/mvtec/capsule/train/good/004.png"
 

@@ -11,6 +11,7 @@ from density import GaussianDensityTorch
 from mvtec_dataloader import MVTecDRAEMTestDataset, MVTecDRAEMTrainDataset
 import timeit
 from datetime import datetime
+from scipy import signal
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -52,6 +53,69 @@ category_list = [
     "grid",
     "wood",
 ]
+
+
+def kernel_size_to_std(k: int):
+    """Returns a standard deviation value for a Gaussian kernel based on its size"""
+    return np.log10(0.45 * k + 1) + 0.25 if k < 32 else 10
+
+
+def gkern(k: int):
+    "" "Returns a 2D Gaussian kernel array with given kernel size k and std std " ""
+    std = kernel_size_to_std(k)
+    if k % 2 == 0:
+        # if kernel size is even, signal.gaussian returns center values sampled from gaussian at x=-1 and x=1
+        # which is much less than 1.0 (depending on std). Instead, sample with kernel size k-1 and duplicate center
+        # value, which is 1.0. Then divide whole signal by 2, because the duplicate results in a too high signal.
+        gkern1d = signal.gaussian(k - 1, std=std).reshape(k - 1, 1)
+        gkern1d = np.insert(gkern1d, (k - 1) // 2, gkern1d[(k - 1) // 2]) / 2
+    else:
+        gkern1d = signal.gaussian(k, std=std).reshape(k, 1)
+    gkern2d = np.outer(gkern1d, gkern1d)
+    return gkern2d
+
+
+def receptive_upsample(
+    pixels: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Implement this to upsample given tensor images based on the receptive field with a Gaussian kernel.
+    Usually one can just invoke the receptive_upsample method of the last convolutional layer.
+    :param pixels: tensors that are to be upsampled (n x c x h x w)
+    """
+    assert (
+        pixels.dim() == 4 and pixels.size(1) == 1
+    ), "receptive upsample works atm only for one channel"
+    pixels = pixels.squeeze(1)
+    pixshp = pixels.shape
+    s = int((patch_size - 1) / 2)  # regarding s: if between pixels, pick the first
+    gaus = torch.from_numpy(gkern(patch_size)).float().to(pixels.device)
+    pad = (patch_size - 1) // 2
+    if (patch_size - 1) % 2 == 0:
+        res = torch.nn.functional.conv_transpose2d(
+            pixels.unsqueeze(1),
+            gaus.unsqueeze(0).unsqueeze(0),
+            stride=train_patch_stride,
+            padding=0,
+            output_padding=resized_image_size
+            - (pixshp[-1] - 1) * train_patch_stride
+            - 1,
+        )
+    else:
+        res = torch.nn.functional.conv_transpose2d(
+            pixels.unsqueeze(1),
+            gaus.unsqueeze(0).unsqueeze(0),
+            stride=train_patch_stride,
+            padding=0,
+            output_padding=resized_image_size
+            - (pixshp[-1] - 1) * train_patch_stride
+            - 1
+            - 1,
+        )
+    out = res[
+        :, :, pad - s : -pad - s, pad - s : -pad - s
+    ]  # shift by receptive center (s)
+    return out.to(device)
 
 
 def eval_on_device(categories, args: Namespace):
@@ -178,6 +242,7 @@ def eval_on_device(categories, args: Namespace):
 
             _, num_crop_row, num_crop_col, _, _ = patches_raw.shape
 
+            # raster scan order (first each cols of a row, then each row)
             all_patches = [
                 patches_raw[:, i, j, :, :]
                 for i in range(num_crop_row)
@@ -212,10 +277,18 @@ def eval_on_device(categories, args: Namespace):
                     else torch.cat((scores, scores_batch), dim=0)
                 )
 
+            # image-level score
             image_level_pred = torch.max(scores).cpu().detach().numpy()
-
             image_level_gt_list.append(image_level_gt)
             image_level_pred_list.append(image_level_pred)
+
+            # pixel-level upsampling
+            upsampled_scores = receptive_upsample(
+                scores.reshape((num_crop_row, num_crop_col)).unsqueeze(0).unsqueeze(0)
+            )
+            print(upsampled_scores)
+            print(upsampled_scores.shape)
+            exit()
 
         image_level_auroc = roc_auc_score(
             np.array(image_level_gt_list), np.array(image_level_pred_list)

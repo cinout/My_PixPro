@@ -7,6 +7,7 @@ from torch.distributed import get_world_size
 
 from .base import BaseModel
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 class Identity(nn.Module):
     def __init__(self):
@@ -148,11 +149,12 @@ class PixPro(BaseModel):
             param_k.data.copy_(param_q.data)
             param_k.requires_grad = False
 
-        # FIXME: efficiency on GPU
-        # nn.SyncBatchNorm.convert_sync_batchnorm(self.encoder)
-        # nn.SyncBatchNorm.convert_sync_batchnorm(self.encoder_k)
-        # nn.SyncBatchNorm.convert_sync_batchnorm(self.projector)
-        # nn.SyncBatchNorm.convert_sync_batchnorm(self.projector_k)
+        
+        if device=="cuda":
+            nn.SyncBatchNorm.convert_sync_batchnorm(self.encoder)
+            nn.SyncBatchNorm.convert_sync_batchnorm(self.encoder_k)
+            nn.SyncBatchNorm.convert_sync_batchnorm(self.projector)
+            nn.SyncBatchNorm.convert_sync_batchnorm(self.projector_k)
 
         self.K = int(
             args.num_instances * 1.0 / get_world_size() / args.batch_size * args.epochs
@@ -188,10 +190,10 @@ class PixPro(BaseModel):
                 param_k.data.copy_(param_q.data)
                 param_k.requires_grad = False
 
-            # FIXME: efficiency on GPU
-            # nn.SyncBatchNorm.convert_sync_batchnorm(self.projector_instance)
-            # nn.SyncBatchNorm.convert_sync_batchnorm(self.projector_instance_k)
-            # nn.SyncBatchNorm.convert_sync_batchnorm(self.predictor)
+            if device=="cuda":
+                nn.SyncBatchNorm.convert_sync_batchnorm(self.projector_instance)
+                nn.SyncBatchNorm.convert_sync_batchnorm(self.projector_instance_k)
+                nn.SyncBatchNorm.convert_sync_batchnorm(self.predictor)
 
             self.avgpool = nn.AvgPool2d(1 if args.image_size == 32 else 7, stride=1)
 
