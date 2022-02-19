@@ -5,9 +5,13 @@ import math, random
 from PIL import Image
 
 
-x = np.array([[[[1, 2], [3, 4], [5, 6]]]])
-print(x.shape)
-print(x.flatten())
+dict = {}
+for i in range(10):
+    for j in range(10):
+        dict[f"{i},{j}"] = (i, j)
+for key, value in dict.items():
+    dict[key] = (*value, 20)
+print(dict)
 # path = "./data/mvtec/capsule/train/good/004.png"
 
 # resized_image_size = 512

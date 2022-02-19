@@ -27,7 +27,7 @@ resized_image_size = 256
 patch_size = 32  # (224) keep consistent with pre-training
 train_patch_stride = 4  # 4:(57*57=3249)
 test_patch_stride = 4
-train_batch_size = 10
+train_batch_size = 100
 
 location_args = {
     "pretrained_model": "./output/pixpro_mvtec/",
@@ -151,23 +151,26 @@ def eval_on_device(categories, args: Namespace):
             train_dataset, batch_size=train_batch_size, shuffle=True
         )
 
+        train_patches_by_index_dict = {}  # key is index (i,j)
+
         for info_batched in train_dataloader:
             train_image_batch = info_batched["image"].to(device)  # shape: bs*3*x*y
+
             patches_raw = train_image_batch.unfold(
                 2, patch_size, train_patch_stride
             ).unfold(
                 3, patch_size, train_patch_stride
-            )  # shape: [bs, 3, 49, 49, 224, 224], assume get # 49*49=100 crops
+            )  # shape: [bs, 3, crop_row, crop_column, patch_size, patch_size]
 
             bs, _, num_crop_row, num_crop_col, _, _ = patches_raw.shape
 
-            all_patches = [
-                patches_raw[i, :, j, k, :, :]
-                for i in range(bs)
-                for j in range(num_crop_row)
-                for k in range(num_crop_col)
-            ]
-            break  # only use the first 10 shuffled images
+            for i in range(num_crop_row):
+                for j in range(num_crop_col):
+                    train_patches_by_index_dict[f"{i},{j}"] = patches_raw[
+                        :, :, i, j, :, :
+                    ]
+
+            break  # only use the first #train_batch_size shuffled images
 
         num_iter = int(np.ceil(len(all_patches) / processing_batch))
         embeds = []
@@ -176,19 +179,27 @@ def eval_on_device(categories, args: Namespace):
                 all_patches[i * processing_batch : (i + 1) * processing_batch]
             )
             embeds.append(encoder(train_patches.to(device)).mean(dim=(-2, -1)))
-        train_embeddings = torch.cat(embeds)
-        train_embeddings = torch.nn.functional.normalize(
-            train_embeddings, p=2, dim=1
-        )  # l2-normalized
 
-        # choose density estimator
-        if args.density == "kde":
-            kde_gamma = 10.0 / (
-                torch.var(train_embeddings, unbiased=False) * train_embeddings.shape[1]
-            )
-        elif args.density == "gde":
-            gde_estimator = GaussianDensityTorch()
-            gde_estimator.fit(train_embeddings)
+        for key, value in train_patches_by_index_dict.items():
+            embeds = encoder(value.to(device)).mean(dim=(-2, -1))
+            embeds_norm = torch.nn.functional.normalize(
+                embeds, p=2, dim=1
+            )  # l2-normalized
+            # choose density estimator
+            if args.density == "kde":
+                kde_gamma = 10.0 / (
+                    torch.var(embeds_norm, unbiased=False) * embeds_norm.shape[1]
+                )
+                train_patches_by_index_dict[key] = {
+                    "kde_gamma": kde_gamma,
+                    "embeddings": embeds_norm,
+                }  # update value of train_patches_by_index_dict
+            elif args.density == "gde":
+                gde_estimator = GaussianDensityTorch()
+                gde_estimator.fit(embeds_norm)
+                train_patches_by_index_dict[
+                    key
+                ] = gde_estimator  # update value of train_patches_by_index_dict
 
         # get test dataset
         test_dataset = MVTecDRAEMTestDataset(
@@ -219,6 +230,11 @@ def eval_on_device(categories, args: Namespace):
             )  # shape: [3, crop_row, crop_column, patch_size, patch_size]
 
             _, num_crop_row, num_crop_col, _, _ = patches_raw.shape
+
+            # refactor
+            for i in range(num_crop_row):
+                for j in range(num_crop_col):
+                    test_patch_raw = patches_raw[:, i, j, :, :]
 
             # raster scan order (first each cols of a row, then each row)
             all_patches = [
@@ -284,8 +300,6 @@ def eval_on_device(categories, args: Namespace):
                 * resized_image_size
                 * resized_image_size
             ] = (upsampled_scores.detach().numpy().flatten())
-
-
 
         image_level_auroc = roc_auc_score(
             np.array(image_level_gt_list), np.array(image_level_pred_list)
