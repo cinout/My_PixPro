@@ -181,10 +181,13 @@ def eval_on_device(categories, args: Namespace):
             embeds.append(encoder(train_patches.to(device)).mean(dim=(-2, -1)))
 
         for key, value in train_patches_by_index_dict.items():
-            embeds = encoder(value.to(device)).mean(dim=(-2, -1))
+            print(f">>> train: {key}")
+            embeds = encoder(value.to(device)).mean(
+                dim=(-2, -1)
+            )  # value shape: bs*3*x*y
             embeds_norm = torch.nn.functional.normalize(
                 embeds, p=2, dim=1
-            )  # l2-normalized
+            )  # l2-normalized, shape: bs * feature_dim
             # choose density estimator
             if args.density == "kde":
                 kde_gamma = 10.0 / (
@@ -233,14 +236,9 @@ def eval_on_device(categories, args: Namespace):
 
             _, num_crop_row, num_crop_col, _, _ = patches_raw.shape
 
-            # refactor
-            for i in range(num_crop_row):
-                for j in range(num_crop_col):
-                    test_patch_raw = patches_raw[:, i, j, :, :]
-
             # raster scan order (first each cols of a row, then each row)
             all_patches = [
-                patches_raw[:, i, j, :, :]
+                (patches_raw[:, i, j, :, :], (i, j))
                 for i in range(num_crop_row)
                 for j in range(num_crop_col)
             ]
@@ -248,30 +246,55 @@ def eval_on_device(categories, args: Namespace):
             num_iter = int(np.ceil(len(all_patches) / processing_batch))
             scores = None  # anomaly score for all cropped patches
             for i in range(num_iter):
-                test_patches = torch.stack(
-                    all_patches[i * processing_batch : (i + 1) * processing_batch]
-                )
+                batch = all_patches[i * processing_batch : (i + 1) * processing_batch]
+
+                test_patches = torch.stack([item[0] for item in batch])
                 test_embeddings = encoder(test_patches.to(device)).mean(dim=(-2, -1))
                 test_embeddings = torch.nn.functional.normalize(
                     test_embeddings, p=2, dim=1
-                )
+                )  # shape: #processing_batch * feature_dim
 
-                if args.density == "kde":
-                    similarity_batch = torch.matmul(
-                        test_embeddings, train_embeddings.transpose(0, 1)
-                    )
-                    scores_batch = (
-                        -torch.logsumexp(2 * kde_gamma * similarity_batch, dim=1)
-                        / kde_gamma
-                    )
-                elif args.density == "gde":
-                    scores_batch = gde_estimator.predict(test_embeddings, device)
+                indices = [item[1] for item in batch]  # [(0,0), (0,1), ... , (m,n)]
 
-                scores = (
-                    scores_batch
-                    if scores is None
-                    else torch.cat((scores, scores_batch), dim=0)
-                )
+                for index in range(test_embeddings.shape[0]):
+                    # for each patch embedding
+                    patch_row, patch_col = indices[index]  # tuple (i,j)
+                    print(f">>> test ({patch_row},{patch_col})")
+                    embed_norm = (test_embeddings[index, :]).unsqueeze(
+                        0
+                    )  # shape: 1 * feature_dim
+                    if args.density == "kde":
+
+                        train_patch_gamma_embed = train_patches_by_index_dict[
+                            f"{patch_row},{patch_col}"
+                        ]
+                        train_patch_kde_gamma = train_patch_gamma_embed["kde_gamma"]
+                        train_patch_embeddings = train_patch_gamma_embed[
+                            "embeddings"
+                        ]  # shape: bs * feature_dim
+
+                        similarity_batch = torch.matmul(
+                            embed_norm,
+                            train_patch_embeddings.transpose(0, 1),
+                        )
+                        scores_batch = (
+                            -torch.logsumexp(
+                                2 * train_patch_kde_gamma * similarity_batch, dim=1
+                            )
+                            / train_patch_kde_gamma
+                        )
+                    elif args.density == "gde":
+                        train_patch_gde_estimator = train_patches_by_index_dict[
+                            f"{patch_row},{patch_col}"
+                        ]
+                        scores_batch = train_patch_gde_estimator.predict(
+                            embed_norm, device
+                        )
+                    scores = (
+                        scores_batch
+                        if scores is None
+                        else torch.cat((scores, scores_batch), dim=0)
+                    )
 
             image_level_gt = (
                 info_batched["has_anomaly"].detach().numpy()[0]

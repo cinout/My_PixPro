@@ -5,10 +5,11 @@ import math, random
 from PIL import Image
 
 
-x = np.array([[[[1, 2], [3, 4], [5, 6]]]])
-print(x.shape)
-print(x.flatten())
-print(type(x.flatten()))
+all_patches = [("happy i sad j", (i, j)) for i in range(10) for j in range(10)]
+
+
+me = all_patches[:20]
+print([item[0] for item in me])
 # path = "./data/mvtec/capsule/train/good/004.png"
 
 # resized_image_size = 512
