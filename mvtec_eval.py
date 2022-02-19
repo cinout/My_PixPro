@@ -181,7 +181,6 @@ def eval_on_device(categories, args: Namespace):
         #     embeds.append(encoder(train_patches.to(device)).mean(dim=(-2, -1)))
 
         for key, value in train_patches_by_index_dict.items():
-            print(f">>> train: {key}")
             embeds = encoder(value.to(device)).mean(
                 dim=(-2, -1)
             )  # value shape: bs*3*x*y
@@ -259,7 +258,6 @@ def eval_on_device(categories, args: Namespace):
                 for index in range(test_embeddings.shape[0]):
                     # for each patch embedding
                     patch_row, patch_col = indices[index]  # tuple (i,j)
-                    print(f">>> test ({patch_row},{patch_col})")
                     embed_norm = (test_embeddings[index, :]).unsqueeze(
                         0
                     )  # shape: 1 * feature_dim
