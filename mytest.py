@@ -5,19 +5,9 @@ import math, random
 from PIL import Image
 
 
-x = torch.tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
-
-num_crop_row, num_crop_col = x.shape
-
-all_elements = torch.stack(
-    [x[i, j] for i in range(num_crop_row) for j in range(num_crop_col)]
-)
-
-z = all_elements.reshape((num_crop_row, num_crop_col)).unsqueeze(0).unsqueeze(0)
-
-print(z.shape)
-print(z)
-
+x = np.array([[[[1, 2], [3, 4], [5, 6]]]])
+print(x.shape)
+print(x.flatten())
 # path = "./data/mvtec/capsule/train/good/004.png"
 
 # resized_image_size = 512

@@ -86,36 +86,15 @@ def receptive_upsample(
     assert (
         pixels.dim() == 4 and pixels.size(1) == 1
     ), "receptive upsample works atm only for one channel"
-    pixels = pixels.squeeze(1)
-    pixshp = pixels.shape
-    s = int((patch_size - 1) / 2)  # regarding s: if between pixels, pick the first
     gaus = torch.from_numpy(gkern(patch_size)).float().to(pixels.device)
-    pad = (patch_size - 1) // 2
-    if (patch_size - 1) % 2 == 0:
-        res = torch.nn.functional.conv_transpose2d(
-            pixels.unsqueeze(1),
-            gaus.unsqueeze(0).unsqueeze(0),
-            stride=train_patch_stride,
-            padding=0,
-            output_padding=resized_image_size
-            - (pixshp[-1] - 1) * train_patch_stride
-            - 1,
-        )
-    else:
-        res = torch.nn.functional.conv_transpose2d(
-            pixels.unsqueeze(1),
-            gaus.unsqueeze(0).unsqueeze(0),
-            stride=train_patch_stride,
-            padding=0,
-            output_padding=resized_image_size
-            - (pixshp[-1] - 1) * train_patch_stride
-            - 1
-            - 1,
-        )
-    out = res[
-        :, :, pad - s : -pad - s, pad - s : -pad - s
-    ]  # shift by receptive center (s)
-    return out.to(device)
+
+    res = torch.nn.functional.conv_transpose2d(
+        pixels,
+        gaus.unsqueeze(0).unsqueeze(0),
+        stride=train_patch_stride,
+    )
+
+    return res.to(device)
 
 
 def eval_on_device(categories, args: Namespace):
@@ -221,6 +200,10 @@ def eval_on_device(categories, args: Namespace):
 
         image_level_gt_list = []  # image-level ground-truth anomaly score [0,1]
         image_level_pred_list = []  # image-level predicted anomaly score
+        pixel_level_gt_list = (
+            []
+        )  # pixel-level ground-truth anomaly score [0,1], size: img_dim * img_dim * len(dataset)
+        pixel_level_pred_list = []  # pixel-level predicted anomaly score
 
         for i_batch, info_batched in enumerate(test_dataloader):
             # each iteration is for one image
@@ -228,12 +211,6 @@ def eval_on_device(categories, args: Namespace):
                 print(
                     f">>> item index: {i_batch}/{len(test_dataset)}",
                 )
-
-            image_level_gt = (
-                info_batched["has_anomaly"].detach().numpy()[0]
-            )  # is_normal: 1.0 or 0.0
-
-            true_mask = info_batched["mask"]  # shape: bs*1*x*y
 
             test_image = info_batched["image"].to(device)[0]  # shape: 3*x*y
             patches_raw = test_image.unfold(1, patch_size, test_patch_stride).unfold(
@@ -277,6 +254,12 @@ def eval_on_device(categories, args: Namespace):
                     else torch.cat((scores, scores_batch), dim=0)
                 )
 
+            image_level_gt = (
+                info_batched["has_anomaly"].detach().numpy()[0]
+            )  # is_normal: 1.0 or 0.0
+
+            true_mask = info_batched["mask"].detach().numpy()  # shape: bs*1*x*y
+
             # image-level score
             image_level_pred = torch.max(scores).cpu().detach().numpy()
             image_level_gt_list.append(image_level_gt)
@@ -286,8 +269,27 @@ def eval_on_device(categories, args: Namespace):
             upsampled_scores = receptive_upsample(
                 scores.reshape((num_crop_row, num_crop_col)).unsqueeze(0).unsqueeze(0)
             )
-            print(upsampled_scores)
-            print(upsampled_scores.shape)
+            pixel_level_gt_list[
+                i_batch
+                * resized_image_size
+                * resized_image_size : (i_batch + 1)
+                * resized_image_size
+                * resized_image_size
+            ] = true_mask.flatten()
+            pixel_level_pred_list[
+                i_batch
+                * resized_image_size
+                * resized_image_size : (i_batch + 1)
+                * resized_image_size
+                * resized_image_size
+            ] = (upsampled_scores.detach().numpy().flatten())
+
+            print(len(pixel_level_gt_list))
+            print(len(pixel_level_pred_list))
+            print("------------------")
+            print(pixel_level_gt_list)
+            print(pixel_level_pred_list)
+
             exit()
 
         image_level_auroc = roc_auc_score(
@@ -327,7 +329,6 @@ if __name__ == "__main__":
         default="gde",
         choices=["kde", "gde"],
         type=str,
-        required=True,
         help="choice of density estimator",
     )
     parser.add_argument(
