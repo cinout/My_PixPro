@@ -201,10 +201,12 @@ def eval_on_device(categories, args: Namespace):
 
         image_level_gt_list = []  # image-level ground-truth anomaly score [0,1]
         image_level_pred_list = []  # image-level predicted anomaly score
-        pixel_level_gt_list = (
-            []
-        )  # pixel-level ground-truth anomaly score [0,1], size: img_dim * img_dim * len(dataset)
-        pixel_level_pred_list = []  # pixel-level predicted anomaly score
+        pixel_level_gt_list = np.zeros(
+            (resized_image_size * resized_image_size * len(test_dataset))
+        )  # pixel-level ground-truth anomaly score (binary)
+        pixel_level_pred_list = np.zeros(
+            (resized_image_size * resized_image_size * len(test_dataset))
+        )  # pixel-level predicted anomaly score
 
         for i_batch, info_batched in enumerate(test_dataloader):
             # each iteration is for one image
@@ -271,8 +273,6 @@ def eval_on_device(categories, args: Namespace):
             upsampled_scores = receptive_upsample(
                 scores.reshape((num_crop_row, num_crop_col)).unsqueeze(0).unsqueeze(0)
             )
-            print(true_mask.flatten())
-            exit()
             pixel_level_gt_list[
                 i_batch
                 * resized_image_size
@@ -292,7 +292,7 @@ def eval_on_device(categories, args: Namespace):
             np.array(image_level_gt_list), np.array(image_level_pred_list)
         )
         pixel_level_auroc = roc_auc_score(
-            np.array(pixel_level_gt_list), np.array(pixel_level_pred_list)
+            pixel_level_gt_list.astype(np.uint8), pixel_level_pred_list
         )
 
         image_level_auroc_all_categories.append(image_level_auroc)

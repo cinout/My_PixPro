@@ -8,6 +8,7 @@ from PIL import Image
 x = np.array([[[[1, 2], [3, 4], [5, 6]]]])
 print(x.shape)
 print(x.flatten())
+print(type(x.flatten()))
 # path = "./data/mvtec/capsule/train/good/004.png"
 
 # resized_image_size = 512
