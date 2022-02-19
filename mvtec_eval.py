@@ -270,6 +270,8 @@ def eval_on_device(categories, args: Namespace):
             upsampled_scores = receptive_upsample(
                 scores.reshape((num_crop_row, num_crop_col)).unsqueeze(0).unsqueeze(0)
             )
+            print(true_mask.flatten())
+            exit()
             pixel_level_gt_list[
                 i_batch
                 * resized_image_size
