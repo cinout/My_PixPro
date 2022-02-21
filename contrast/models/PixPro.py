@@ -9,6 +9,7 @@ from .base import BaseModel
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
+
 class Identity(nn.Module):
     def __init__(self):
         super(Identity, self).__init__()
@@ -149,8 +150,7 @@ class PixPro(BaseModel):
             param_k.data.copy_(param_q.data)
             param_k.requires_grad = False
 
-        
-        if device=="cuda":
+        if device == "cuda":
             nn.SyncBatchNorm.convert_sync_batchnorm(self.encoder)
             nn.SyncBatchNorm.convert_sync_batchnorm(self.encoder_k)
             nn.SyncBatchNorm.convert_sync_batchnorm(self.projector)
@@ -190,7 +190,7 @@ class PixPro(BaseModel):
                 param_k.data.copy_(param_q.data)
                 param_k.requires_grad = False
 
-            if device=="cuda":
+            if device == "cuda":
                 nn.SyncBatchNorm.convert_sync_batchnorm(self.projector_instance)
                 nn.SyncBatchNorm.convert_sync_batchnorm(self.projector_instance_k)
                 nn.SyncBatchNorm.convert_sync_batchnorm(self.predictor)
@@ -260,7 +260,10 @@ class PixPro(BaseModel):
         return feat.view(N, C, H, W)
 
     def regression_loss(self, x, y):
-        return -2.0 * torch.einsum("nc, nc->n", [x, y]).mean()
+        # x.shape = y.shape: [bs, 256]
+        return (
+            -2.0 * torch.einsum("nc, nc->n", [x, y]).mean()
+        )  # torch.einsum("nc, nc->n", [x, y]).shape: [bs]
 
     def forward(self, im_1, im_2, coord1, coord2):
         """
@@ -282,11 +285,17 @@ class PixPro(BaseModel):
         pred_2 = F.normalize(pred_2, dim=1)
 
         if self.pixpro_ins_loss_weight > 0.0:
-            proj_instance_1 = self.projector_instance(feat_1)
-            pred_instacne_1 = self.predictor(proj_instance_1)
+            # feat_1.shape: [bs, 512, 7, 7]
+            proj_instance_1 = self.projector_instance(
+                feat_1
+            )  # proj_instance_1.shape: [bs, 256, 7, 7]
+            pred_instacne_1 = self.predictor(
+                proj_instance_1
+            )  # pred_instacne_1.shape: [bs, 256, 7, 7]
+
             pred_instance_1 = F.normalize(
                 self.avgpool(pred_instacne_1).view(pred_instacne_1.size(0), -1), dim=1
-            )
+            )  # pred_instance_1.shape: [bs, 256]
 
             proj_instance_2 = self.projector_instance(feat_2)
             pred_instance_2 = self.predictor(proj_instance_2)

@@ -54,6 +54,27 @@ category_list = [
     "zipper",
 ]
 
+texture_types = [
+    "carpet",
+    "grid",
+    "leather",
+    "tile",
+    "wood",
+]
+
+object_types = [
+    "bottle",
+    "cable",
+    "capsule",
+    "hazelnut",
+    "metal_nut",
+    "pill",
+    "screw",
+    "toothbrush",
+    "transistor",
+    "zipper",
+]
+
 
 def kernel_size_to_std(k: int):
     """Returns a standard deviation value for a Gaussian kernel based on its size"""
@@ -119,6 +140,12 @@ def eval_on_device(categories, args: Namespace):
 
     image_level_auroc_all_categories = []
     pixel_level_auroc_all_categories = []
+
+    image_level_auroc_texture_categories = []
+    pixel_level_auroc_texture_categories = []
+
+    image_level_auroc_object_categories = []
+    pixel_level_auroc_object_categories = []
 
     for category in categories:
 
@@ -334,6 +361,13 @@ def eval_on_device(categories, args: Namespace):
         image_level_auroc_all_categories.append(image_level_auroc)
         pixel_level_auroc_all_categories.append(pixel_level_auroc)
 
+        if category in texture_types:
+            image_level_auroc_texture_categories.append(image_level_auroc)
+            pixel_level_auroc_texture_categories.append(pixel_level_auroc)
+        elif category in object_types:
+            image_level_auroc_object_categories.append(image_level_auroc)
+            pixel_level_auroc_object_categories.append(pixel_level_auroc)
+
         print(f"Image Level AUROC - {category}:", image_level_auroc)
         print(f"Pixel Level AUROC - {category}:", pixel_level_auroc)
         output_file.write(f"Image Level AUROC - {category}: {image_level_auroc}\n")
@@ -342,16 +376,41 @@ def eval_on_device(categories, args: Namespace):
         output_file.write("======================\n")
 
     output_file.write("\n\n\n")
-    image_level_auroc_mean = np.mean(np.array(image_level_auroc_all_categories))
-    pixel_level_auroc_mean = np.mean(np.array(pixel_level_auroc_all_categories))
-    print("Image Level AUROC - Mean (15 classes):", image_level_auroc_mean)
-    print("Pixel Level AUROC - Mean (15 classes):", pixel_level_auroc_mean)
+    image_level_auroc_all_mean = np.mean(np.array(image_level_auroc_all_categories))
+    pixel_level_auroc_all_mean = np.mean(np.array(pixel_level_auroc_all_categories))
+    print("Image Level AUROC - Mean (15 classes):", image_level_auroc_all_mean)
+    print("Pixel Level AUROC - Mean (15 classes):", pixel_level_auroc_all_mean)
     output_file.write(
-        f"Image Level AUROC - Mean (15 classes): {image_level_auroc_mean}\n"
+        f"Image Level AUROC - Mean (15 classes): {image_level_auroc_all_mean}\n"
     )
     output_file.write(
-        f"Pixel Level AUROC - Mean (15 classes): {pixel_level_auroc_mean}\n"
+        f"Pixel Level AUROC - Mean (15 classes): {pixel_level_auroc_all_mean}\n"
     )
+
+    image_level_auroc_texture_mean = np.mean(np.array(image_level_auroc_texture_categories))
+    pixel_level_auroc_texture_mean = np.mean(np.array(pixel_level_auroc_texture_categories))
+    print("Image Level AUROC - Mean (Texture):", image_level_auroc_texture_mean)
+    print("Pixel Level AUROC - Mean (Texture):", pixel_level_auroc_texture_mean)
+    output_file.write(
+        f"Image Level AUROC - Mean (Texture): {image_level_auroc_texture_mean}\n"
+    )
+    output_file.write(
+        f"Pixel Level AUROC - Mean (Texture): {pixel_level_auroc_texture_mean}\n"
+    )
+
+
+    image_level_auroc_object_mean = np.mean(np.array(image_level_auroc_object_categories))
+    pixel_level_auroc_object_mean = np.mean(np.array(pixel_level_auroc_object_categories))
+    print("Image Level AUROC - Mean (Object):", image_level_auroc_object_mean)
+    print("Pixel Level AUROC - Mean (Object):", pixel_level_auroc_object_mean)
+    output_file.write(
+        f"Image Level AUROC - Mean (Object): {image_level_auroc_object_mean}\n"
+    )
+    output_file.write(
+        f"Pixel Level AUROC - Mean (Object): {pixel_level_auroc_object_mean}\n"
+    )
+
+
     output_file.close()
 
 
