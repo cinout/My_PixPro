@@ -5,18 +5,22 @@ import math, random
 from PIL import Image
 
 
-array1 = np.array(
-    [
-        0.7170056640588077,
-        0.6512678339409019,
-        0.8329140380763465,
-        0.7043903846560043,
-        0.7658867817846091,
-    ]
-)
+x = torch.tensor([[0, 1, 2], [3, 4, 5]])
+y = torch.tensor([[2, 3, 2], [4, 1, 4]])
+z = torch.einsum("nc, nc->n", [x, y])
+print(z)
+# array1 = np.array(
+#     [
+#         0.7170056640588077,
+#         0.6512678339409019,
+#         0.8329140380763465,
+#         0.7043903846560043,
+#         0.7658867817846091,
+#     ]
+# )
 
-# print(array1.mean())
-print((77.0 * 15 - 80.3 * 5) / 10)
+# # print(array1.mean())
+# print((77.0 * 15 - 80.3 * 5) / 10)
 
 
 # path = "./data/mvtec/capsule/train/good/004.png"
