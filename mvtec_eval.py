@@ -77,6 +77,10 @@ object_types = [
 ]
 
 
+def normalizeData(data):
+    return (data - np.min(data)) / (np.max(data) - np.min(data))
+
+
 def kernel_size_to_std(k: int):
     """Returns a standard deviation value for a Gaussian kernel based on its size"""
     return np.log10(0.45 * k + 1) + 0.25 if k < 32 else 10
@@ -356,9 +360,6 @@ def eval_on_device(categories, args: Namespace):
                 * resized_image_size
             ] = (upsampled_scores.cpu().detach().numpy().flatten())
 
-            print(upsampled_scores.shape)
-            exit()
-
             # qualitative image output
             file_name = info_batched["file_name"][0]
             raw_image = info_batched["image"][0]
@@ -367,7 +368,8 @@ def eval_on_device(categories, args: Namespace):
             gt_mask = np.transpose(np.array(true_mask[0] * 255), (1, 2, 0))
             gt_img = np.transpose(np.array(raw_image * 255), (1, 2, 0))
             pre_mask = np.transpose(
-                np.uint8(raw_mask.detach().numpy() * 255), (1, 2, 0)
+                np.uint8(normalizeData(upsampled_scores[0].detach().numpy()) * 255),
+                (1, 2, 0),
             )
 
             heatmap = cv2.applyColorMap(pre_mask, cv2.COLORMAP_JET)
