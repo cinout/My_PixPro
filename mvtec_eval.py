@@ -356,10 +356,12 @@ def eval_on_device(categories, args: Namespace):
                 * resized_image_size
             ] = (upsampled_scores.cpu().detach().numpy().flatten())
 
+            print(upsampled_scores.shape)
+            exit()
+
             # qualitative image output
             file_name = info_batched["file_name"][0]
             raw_image = info_batched["image"][0]
-            raw_mask = info_batched["mask"][0]
             heatmap_alpha = 0.5
 
             gt_mask = np.transpose(np.array(true_mask[0] * 255), (1, 2, 0))
