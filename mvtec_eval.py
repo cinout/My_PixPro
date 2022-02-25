@@ -126,8 +126,8 @@ def receptive_upsample(
 def eval_on_device(categories, args: Namespace):
     if not os.path.exists(location_args["log"]):
         os.makedirs(location_args["log"])
-    if not os.path.exists(location_args["log"]):
-        os.makedirs(location_args["log"])
+    if not os.path.exists(location_args["qualitative"]):
+        os.makedirs(location_args["qualitative"])
 
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
