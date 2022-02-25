@@ -1,6 +1,7 @@
 .idea/
 data
 output*/
+qualitative/
 ckpts/
 logs/
 *.pth

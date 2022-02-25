@@ -12,7 +12,7 @@ from mvtec_dataloader import MVTecDRAEMTestDataset, MVTecDRAEMTrainDataset
 import timeit
 from datetime import datetime
 from scipy import signal
-
+import cv2
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 processing_batch = 128  # batch size for obtaining embeddings from patches
@@ -27,12 +27,13 @@ resized_image_size = 256
 patch_size = 32  # (224) keep consistent with pre-training
 train_patch_stride = 4  # 4:(57*57=3249)
 test_patch_stride = 4
-train_batch_size = 100
+train_batch_size = 250
 
 location_args = {
     "pretrained_model": "./output/pixpro_mvtec/",
     "mvtec_dataset": "./data/mvtec/",
     "log": "./logs/",
+    "qualitative": "./qualitative/",
 }
 
 # mvtec dataset categories
@@ -119,6 +120,8 @@ def receptive_upsample(
 
 
 def eval_on_device(categories, args: Namespace):
+    if not os.path.exists(location_args["log"]):
+        os.makedirs(location_args["log"])
     if not os.path.exists(location_args["log"]):
         os.makedirs(location_args["log"])
 
@@ -336,6 +339,8 @@ def eval_on_device(categories, args: Namespace):
             upsampled_scores = receptive_upsample(
                 scores.reshape((num_crop_row, num_crop_col)).unsqueeze(0).unsqueeze(0)
             )
+
+            # pixel-level score
             pixel_level_gt_list[
                 i_batch
                 * resized_image_size
@@ -350,6 +355,30 @@ def eval_on_device(categories, args: Namespace):
                 * resized_image_size
                 * resized_image_size
             ] = (upsampled_scores.cpu().detach().numpy().flatten())
+
+            # qualitative image output
+            file_name = info_batched["file_name"][0]
+            raw_image = info_batched["image"][0]
+            raw_mask = info_batched["mask"][0]
+            heatmap_alpha = 0.5
+
+            gt_mask = np.transpose(np.array(true_mask[0] * 255), (1, 2, 0))
+            gt_img = np.transpose(np.array(raw_image * 255), (1, 2, 0))
+            pre_mask = np.transpose(
+                np.uint8(raw_mask.detach().numpy() * 255), (1, 2, 0)
+            )
+
+            heatmap = cv2.applyColorMap(pre_mask, cv2.COLORMAP_JET)
+            hmap_overlay_gt_img = heatmap * heatmap_alpha + gt_img * (
+                1.0 - heatmap_alpha
+            )
+
+            cv2.imwrite(f"./qualitative/{category}/{file_name}_[0]mask_gt.jpg", gt_mask)
+            cv2.imwrite(
+                f"./qualitative/{category}/{file_name}_[1]heatmap.jpg",
+                hmap_overlay_gt_img,
+            )
+            cv2.imwrite(f"./qualitative/{category}/{file_name}_[2]img_gt.jpg", gt_img)
 
         image_level_auroc = roc_auc_score(
             np.array(image_level_gt_list), np.array(image_level_pred_list)
@@ -387,8 +416,12 @@ def eval_on_device(categories, args: Namespace):
         f"Pixel Level AUROC - Mean (15 classes): {pixel_level_auroc_all_mean}\n"
     )
 
-    image_level_auroc_texture_mean = np.mean(np.array(image_level_auroc_texture_categories))
-    pixel_level_auroc_texture_mean = np.mean(np.array(pixel_level_auroc_texture_categories))
+    image_level_auroc_texture_mean = np.mean(
+        np.array(image_level_auroc_texture_categories)
+    )
+    pixel_level_auroc_texture_mean = np.mean(
+        np.array(pixel_level_auroc_texture_categories)
+    )
     print("Image Level AUROC - Mean (Texture):", image_level_auroc_texture_mean)
     print("Pixel Level AUROC - Mean (Texture):", pixel_level_auroc_texture_mean)
     output_file.write(
@@ -398,9 +431,12 @@ def eval_on_device(categories, args: Namespace):
         f"Pixel Level AUROC - Mean (Texture): {pixel_level_auroc_texture_mean}\n"
     )
 
-
-    image_level_auroc_object_mean = np.mean(np.array(image_level_auroc_object_categories))
-    pixel_level_auroc_object_mean = np.mean(np.array(pixel_level_auroc_object_categories))
+    image_level_auroc_object_mean = np.mean(
+        np.array(image_level_auroc_object_categories)
+    )
+    pixel_level_auroc_object_mean = np.mean(
+        np.array(pixel_level_auroc_object_categories)
+    )
     print("Image Level AUROC - Mean (Object):", image_level_auroc_object_mean)
     print("Pixel Level AUROC - Mean (Object):", pixel_level_auroc_object_mean)
     output_file.write(
@@ -409,7 +445,6 @@ def eval_on_device(categories, args: Namespace):
     output_file.write(
         f"Pixel Level AUROC - Mean (Object): {pixel_level_auroc_object_mean}\n"
     )
-
 
     output_file.close()
 
