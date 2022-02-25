@@ -13,6 +13,7 @@ import timeit
 from datetime import datetime
 from scipy import signal
 import cv2
+import torchvision.models as models
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 processing_batch = 128  # batch size for obtaining embeddings from patches
@@ -134,6 +135,7 @@ def eval_on_device(categories, args: Namespace):
     )
     output_file.write(f"NOTE: {args.note}\n\n\n")
     output_file.write(f"density estimator: {args.density}\n")
+    output_file.write(f"use ImageNet Resnet-18: {args.imagenet_resnet}\n")
     output_file.write(f"resized_image_size: {resized_image_size}\n")
     output_file.write(f"patch_size: {patch_size}\n")
     output_file.write(f"train_patch_stride: {train_patch_stride}\n")
@@ -171,8 +173,13 @@ def eval_on_device(categories, args: Namespace):
             k = k.replace("encoder.", "")
             pretrained_model[k] = v
 
-        encoder = resnet.__dict__["resnet18"](head_type="early_return")
-        encoder.load_state_dict(pretrained_model)
+        if args.imagenet_resnet:
+            pretrained_resnet = models.resnet18(pretrained=True)
+            encoder = torch.nn.Sequential(*(list(pretrained_resnet.children())[:-1]))
+        else:
+            encoder = resnet.__dict__["resnet18"](head_type="early_return")
+            encoder.load_state_dict(pretrained_model)
+
         encoder.to(device)
         encoder.eval()  # set model to eval mode
 
@@ -464,7 +471,8 @@ if __name__ == "__main__":
         "--category",
         action="store",
         type=str,
-        required=True,
+        required=False,
+        default="all",
         help="MVTec category type",
     )
     parser.add_argument(
@@ -481,6 +489,22 @@ if __name__ == "__main__":
         type=str,
         required=True,
         help="any personal note for this evaluation",
+    )
+    parser.add_argument(
+        "--imagenet_resnet",
+        action="store",
+        type=bool,
+        required=False,
+        default=False,
+        help="use imageNet pretrain resnet",
+    )
+    parser.add_argument(
+        "--qualitative",
+        action="store",
+        type=bool,
+        required=False,
+        default=False,
+        help="print qualitative images",
     )
 
     parsed_args = parser.parse_args()
