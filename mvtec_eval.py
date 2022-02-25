@@ -368,7 +368,9 @@ def eval_on_device(categories, args: Namespace):
             gt_mask = np.transpose(np.array(true_mask[0] * 255), (1, 2, 0))
             gt_img = np.transpose(np.array(raw_image * 255), (1, 2, 0))
             pre_mask = np.transpose(
-                np.uint8(normalizeData(upsampled_scores[0].detach().numpy()) * 255),
+                np.uint8(
+                    normalizeData(upsampled_scores[0].cpu().detach().numpy()) * 255
+                ),
                 (1, 2, 0),
             )
 
