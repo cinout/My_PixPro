@@ -155,9 +155,10 @@ def eval_on_device(categories, args: Namespace):
     pixel_level_auroc_object_categories = []
 
     for category in categories:
-        image_out_path = f"./qualitative/{category}"  # image output directory
-        if not os.path.exists(image_out_path):
-            os.makedirs(image_out_path)
+        if args.qualitative:
+            image_out_path = f"./qualitative/{category}"  # image output directory
+            if not os.path.exists(image_out_path):
+                os.makedirs(image_out_path)
 
         checkpoint = torch.load(
             os.path.join(location_args["pretrained_model"], f"current_{category}.pth"),
@@ -368,31 +369,36 @@ def eval_on_device(categories, args: Namespace):
                 * resized_image_size
             ] = (upsampled_scores.cpu().detach().numpy().flatten())
 
-            # qualitative image output
-            file_name = info_batched["file_name"][0]
-            raw_image = info_batched["image"][0]
-            heatmap_alpha = 0.5
+            if args.qualitative:
+                # qualitative image output
+                file_name = info_batched["file_name"][0]
+                raw_image = info_batched["image"][0]
+                heatmap_alpha = 0.5
 
-            gt_mask = np.transpose(np.array(true_mask[0] * 255), (1, 2, 0))
-            gt_img = np.transpose(np.array(raw_image * 255), (1, 2, 0))
-            pre_mask = np.transpose(
-                np.uint8(
-                    normalizeData(upsampled_scores[0].cpu().detach().numpy()) * 255
-                ),
-                (1, 2, 0),
-            )
+                gt_mask = np.transpose(np.array(true_mask[0] * 255), (1, 2, 0))
+                gt_img = np.transpose(np.array(raw_image * 255), (1, 2, 0))
+                pre_mask = np.transpose(
+                    np.uint8(
+                        normalizeData(upsampled_scores[0].cpu().detach().numpy()) * 255
+                    ),
+                    (1, 2, 0),
+                )
 
-            heatmap = cv2.applyColorMap(pre_mask, cv2.COLORMAP_JET)
-            hmap_overlay_gt_img = heatmap * heatmap_alpha + gt_img * (
-                1.0 - heatmap_alpha
-            )
+                heatmap = cv2.applyColorMap(pre_mask, cv2.COLORMAP_JET)
+                hmap_overlay_gt_img = heatmap * heatmap_alpha + gt_img * (
+                    1.0 - heatmap_alpha
+                )
 
-            cv2.imwrite(f"./qualitative/{category}/{file_name}_[0]mask_gt.jpg", gt_mask)
-            cv2.imwrite(
-                f"./qualitative/{category}/{file_name}_[1]heatmap.jpg",
-                hmap_overlay_gt_img,
-            )
-            cv2.imwrite(f"./qualitative/{category}/{file_name}_[2]img_gt.jpg", gt_img)
+                cv2.imwrite(
+                    f"./qualitative/{category}/{file_name}_[0]mask_gt.jpg", gt_mask
+                )
+                cv2.imwrite(
+                    f"./qualitative/{category}/{file_name}_[1]heatmap.jpg",
+                    hmap_overlay_gt_img,
+                )
+                cv2.imwrite(
+                    f"./qualitative/{category}/{file_name}_[2]img_gt.jpg", gt_img
+                )
 
         image_level_auroc = roc_auc_score(
             np.array(image_level_gt_list), np.array(image_level_pred_list)
