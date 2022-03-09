@@ -9,5 +9,5 @@ python3 mvtec_eval.py \
     --category all \
     --density gde \
     --note "" \
-    --imagenet_resnet False \
-    --qualitative False \
+    # --imagenet_resnet \
+    # --qualitative \

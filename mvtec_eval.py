@@ -130,6 +130,8 @@ def eval_on_device(categories, args: Namespace):
 
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
+    print(args)
+
     output_file = open(
         os.path.join(location_args["log"], f"eval_results_{timestamp}.txt"), "a"
     )
@@ -223,7 +225,14 @@ def eval_on_device(categories, args: Namespace):
         #     )
         #     embeds.append(encoder(train_patches.to(device)).mean(dim=(-2, -1)))
 
+        de_counter = 0
         for key, value in train_patches_by_index_dict.items():
+            if de_counter % 20 == 0:
+                print(
+                    f">>> now fitting density for index: {key}",
+                )
+            de_counter += 1
+
             embeds = encoder(value.to(device)).mean(
                 dim=(-2, -1)
             )  # value shape: bs*3*x*y
@@ -498,18 +507,14 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--imagenet_resnet",
-        action="store",
-        type=bool,
+        action="store_true",
         required=False,
-        default=False,
         help="use imageNet pretrain resnet",
     )
     parser.add_argument(
         "--qualitative",
-        action="store",
-        type=bool,
+        action="store_true",
         required=False,
-        default=False,
         help="print qualitative images",
     )
 
