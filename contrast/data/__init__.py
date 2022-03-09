@@ -38,7 +38,7 @@ def get_loader(aug_type, args, two_crop=False, prefix="train", return_coord=Fals
         )
     else:
         if args.dataset == "ImageNet":
-            train_folder = os.path.join(args.data_dir, prefix)
+            train_folder = os.path.join(args.data_dir, "train_blurred")
             train_dataset = ImageFolder(
                 train_folder,
                 transform=transform,
