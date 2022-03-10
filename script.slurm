@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --partition=deeplearn
-#SBATCH --qos=gpgpudeeplearn
+#SBATCH --qos gpgpudeeplearn
 #SBATCH --job-name="bs256epoch1000"
 #SBATCH --account=punim1623
 #SBATCH --time=12:00:00
