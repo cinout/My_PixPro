@@ -6,7 +6,7 @@
 #SBATCH --account=punim1623
 #SBATCH --time=12:00:00
 
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:v100:4
 #SBATCH --nodes=1
 #SBATCH --mem=40920
 #SBATCH --ntasks=4
