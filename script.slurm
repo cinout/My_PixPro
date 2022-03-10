@@ -5,7 +5,9 @@
 #SBATCH --job-name="bs256epoch1000"
 #SBATCH --account=punim1623
 #SBATCH --time=06:00:00
+
 #SBATCH --gres=gpu:4
+#SBATCH --nodes=4
 
 #SBATCH --mail-user=haitianh@student.unimelb.edu.au
 #SBATCH --mail-type=BEGIN
