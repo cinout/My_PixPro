@@ -45,3 +45,4 @@ python -m torch.distributed.launch --master_port 12350 --nproc_per_node=${number
     --pixpro-ins-loss-weight 0 \
     \
     --mvtec_category all 
+    --combine_categories

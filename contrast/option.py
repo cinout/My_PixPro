@@ -92,6 +92,12 @@ def parse_option(stage="pre-train"):
         ],
         help="mvtec image category",
     )
+    parser.add_argument(
+        "--combine_categories",
+        action="store_true",
+        required=False,
+        help="pretrain one model on all categories",
+    )
 
     if stage == "linear":
         parser.add_argument(

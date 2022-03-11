@@ -110,7 +110,7 @@ def save_checkpoint(args, epoch, model, optimizer, scheduler, sampler=None):
     file_name = os.path.join(
         args.output_dir,
         f"ckpt_{args.mvtec_category}_epoch_{epoch}.pth"
-        if args.dataset == "MVTec"
+        if (args.dataset == "MVTec" and not args.combine_categories)
         else f"ckpt_epoch_{epoch}.pth",
     )
     torch.save(state, file_name)
@@ -119,7 +119,7 @@ def save_checkpoint(args, epoch, model, optimizer, scheduler, sampler=None):
         os.path.join(
             args.output_dir,
             f"current_{args.mvtec_category}.pth"
-            if args.dataset == "MVTec"
+            if (args.dataset == "MVTec" and not args.combine_categories)
             else "current.pth",
         ),
     )
@@ -149,7 +149,7 @@ def main(args):
         resume_file = os.path.join(
             args.output_dir,
             f"current_{args.mvtec_category}.pth"
-            if args.dataset == "MVTec"
+            if (args.dataset == "MVTec" and not args.combine_categories)
             else "current.pth",
         )
         if os.path.exists(resume_file):
@@ -258,7 +258,12 @@ if __name__ == "__main__":
         "\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(opt)).items()))
     )
 
-    if opt.dataset == "MVTec" and opt.mvtec_category == "all":
+    if (
+        opt.dataset == "MVTec"
+        and opt.mvtec_category == "all"
+        and (not opt.combine_categories)
+    ):
+
         for category in mvtec_categories:
             opt.mvtec_category = category
             main(opt)
