@@ -281,6 +281,7 @@ class PixPro(BaseModel):
         print(
             "[PixPro] model.device:\t\t",
             next(self.encoder.parameters()).device,
+            next(self.projector.parameters()).device,
         )
         feat_1 = self.encoder(im_1)  # shape: [32, 512, 7, 7]
         proj_1 = self.projector(feat_1)
