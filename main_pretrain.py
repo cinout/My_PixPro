@@ -200,6 +200,9 @@ def train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer
         print(
             "[main_pretrain] data.device:\t\t",
             data[0].device,
+            data[1].device,
+            data[2].device,
+            data[3].device,
         )
         print(
             "[main_pretrain] model.device:\t\t",

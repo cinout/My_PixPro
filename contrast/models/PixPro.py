@@ -277,6 +277,9 @@ class PixPro(BaseModel):
         print(
             "[PixPro] data.device:\t\t",
             im_1.device,
+            im_2.device,
+            coord1.device,
+            coord2.device,
         )
         print(
             "[PixPro] model.device:\t\t",
