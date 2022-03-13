@@ -285,6 +285,7 @@ class ResNet(nn.Module):
 
     def forward(self, x):
         print("x.get_device():", x.get_device())
+        print("x.device:", x.device)
         print("next(self.conv1.parameters()).device:", next(self.conv1.parameters()).device)
         x = self.conv1(x)
         x = self.bn1(x)
