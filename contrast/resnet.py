@@ -284,7 +284,10 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        print("x.device:\t\t", x.device)
+        print(
+            "[resnet] x.device:\t\t",
+            x.device,
+        )
         print("model.device:\t\t", next(self.conv1.parameters()).device)
         x = self.conv1(x)
         x = self.bn1(x)

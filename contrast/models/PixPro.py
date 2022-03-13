@@ -274,6 +274,10 @@ class PixPro(BaseModel):
             logits, targets
         """
         # compute query features
+        print(
+            "[PixPro] im_1.device:\t\t",
+            im_1.device,
+        )
         feat_1 = self.encoder(im_1)  # shape: [32, 512, 7, 7]
         proj_1 = self.projector(feat_1)
         pred_1 = self.featprop(proj_1)
