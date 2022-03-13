@@ -275,8 +275,12 @@ class PixPro(BaseModel):
         """
         # compute query features
         print(
-            "[PixPro] im_1.device:\t\t",
+            "[PixPro] data.device:\t\t",
             im_1.device,
+        )
+        print(
+            "[PixPro] model.device:\t\t",
+            next(self.encoder.parameters()).device,
         )
         feat_1 = self.encoder(im_1)  # shape: [32, 512, 7, 7]
         proj_1 = self.projector(feat_1)
