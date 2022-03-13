@@ -43,8 +43,9 @@ mvtec_categories = [
 
 
 def build_model(args):
+    print("[main_pretrain] torch.cuda.current_device():", torch.cuda.current_device())
     encoder = resnet.__dict__[args.arch]
-    model = models.__dict__[args.model](encoder, args)
+    model = models.__dict__[args.model](encoder, args).to(device)
 
     if args.optimizer == "sgd":
         optimizer = torch.optim.SGD(
@@ -138,7 +139,6 @@ def main(args):
     args.num_instances = len(train_loader.dataset)
     logger.info(f"length of training dataset: {args.num_instances}")
 
-    print("[main_pretrain] torch.cuda.current_device():", torch.cuda.current_device())
     model, optimizer = build_model(args)
     scheduler = get_scheduler(optimizer, len(train_loader), args)
 
@@ -201,11 +201,16 @@ def train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer
     end = time.time()
     for idx, data in enumerate(train_loader):
         print(
-            "[main_pretrain] data.get_device():",
+            "[main_pretrain] BEFORE data.get_device():",
             data.get_device(),
         )
 
         data = [item.to(device, non_blocking=True) for item in data]
+
+        print(
+            "[main_pretrain] AFTER data.get_device():",
+            data.get_device(),
+        )
 
         # In PixPro, data[0] -> im1, data[1] -> im2, data[2] -> coord1, data[3] -> coord2
         loss = model(data[0], data[1], data[2], data[3])
