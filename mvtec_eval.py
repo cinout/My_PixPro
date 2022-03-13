@@ -183,7 +183,7 @@ def eval_on_device(categories, args: Namespace):
             encoder = resnet.__dict__["resnet18"](head_type="early_return")
             encoder.load_state_dict(pretrained_model)
 
-        encoder.to(device)
+        encoder = encoder.to(device)
         encoder.eval()  # set model to eval mode
 
         # get embeddings from training dataset

@@ -66,9 +66,9 @@ def build_model(args):
 
     # FIXME: commented out because it causes error
 
-    # model = DistributedDataParallel(
-    #     model, device_ids=[args.local_rank], broadcast_buffers=False
-    # )
+    model = DistributedDataParallel(
+        model, device_ids=[args.local_rank], broadcast_buffers=False
+    )
 
     return model, optimizer
 

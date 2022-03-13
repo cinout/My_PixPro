@@ -1,21 +1,22 @@
 #!/bin/bash
 
-#SBATCH --partition=gpgpu
-#SBATCH --qos=gpgpumse
-#SBATCH --job-name="bs256epoch1000"
+#SBATCH --partition=deeplearn
+#SBATCH --qos=gpgpudeeplearn
+#SBATCH --job-name="in_pre"
 #SBATCH --account=punim1623
 #SBATCH --time=12:00:00
 
-#SBATCH --gres=gpu:4
+
 #SBATCH --nodes=1
-#SBATCH --mem=40920
-#SBATCH --ntasks=4
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=4
+#SBATCH --gres=gpu:4
+#SBATCH --mem=100G
 
 #SBATCH --mail-user=haitianh@student.unimelb.edu.au
 #SBATCH --mail-type=BEGIN
 #SBATCH --mail-type=END
 #SBATCH --mail-type=FAIL
-
 
 module load foss/2019b
 module load web_proxy
@@ -27,4 +28,4 @@ module add gcc/8.3.0
 module load anaconda3/2021.05
 source activate pixpro
 
-./tools/pixpro_mvtec.sh
+./tools/pixpro_imagenet.sh
