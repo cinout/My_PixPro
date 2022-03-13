@@ -195,10 +195,11 @@ def train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer
 
     end = time.time()
     for idx, data in enumerate(train_loader):
+        print(data)
         data = [item.to(device, non_blocking=True) for item in data]
 
         print(
-            "[main_pretrain] AFTER data.device:\t\t",
+            "[main_pretrain] data.device:\t\t",
             data[0].device,
         )
         print(
