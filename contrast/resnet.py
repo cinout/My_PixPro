@@ -30,8 +30,7 @@ def conv3x3(in_planes, out_planes, stride=1):
 
 def conv3x3_bn_relu(in_planes, out_planes, stride=1):
     return nn.Sequential(
-        conv3x3(in_planes, out_planes, stride), nn.BatchNorm2d(
-            out_planes), nn.ReLU()
+        conv3x3(in_planes, out_planes, stride), nn.BatchNorm2d(out_planes), nn.ReLU()
     )
 
 
@@ -50,8 +49,7 @@ class BasicBlock(nn.Module):
     ):
         super(BasicBlock, self).__init__()
         if groups != 1 or base_width != 64:
-            raise ValueError(
-                "BasicBlock only supports groups=1 and base_width=64")
+            raise ValueError("BasicBlock only supports groups=1 and base_width=64")
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = nn.BatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
@@ -184,13 +182,10 @@ class ResNet(nn.Module):
 
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, self.base, layers[0])
-        self.layer2 = self._make_layer(
-            block, self.base * 2, layers[1], stride=2)
-        self.layer3 = self._make_layer(
-            block, self.base * 4, layers[2], stride=2)
+        self.layer2 = self._make_layer(block, self.base * 2, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, self.base * 4, layers[2], stride=2)
         if layer4_dilation == 1:
-            self.layer4 = self._make_layer(
-                block, self.base * 8, layers[3], stride=2)
+            self.layer4 = self._make_layer(block, self.base * 8, layers[3], stride=2)
         elif layer4_dilation == 2:
             self.layer4 = self._make_layer(
                 block, self.base * 8, layers[3], stride=1, dilation=2
@@ -289,6 +284,8 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        print("x.get_device():", x.get_device())
+        print("next(self.conv1.parameters()).device:", next(self.conv1.parameters()).device)
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)

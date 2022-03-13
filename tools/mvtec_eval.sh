@@ -3,7 +3,7 @@
 set -e
 set -x
 
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 
+CUDA_VISIBLE_DEVICES=0,1,2,3
 
 python3 mvtec_eval.py \
     --category all \

@@ -44,7 +44,7 @@ mvtec_categories = [
 
 def build_model(args):
     encoder = resnet.__dict__[args.arch]
-    model = models.__dict__[args.model](encoder, args).to(device)
+    model = models.__dict__[args.model](encoder, args)
 
     if args.optimizer == "sgd":
         optimizer = torch.optim.SGD(
@@ -189,12 +189,21 @@ def train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer
     one epoch training
     """
     model.train()
+    print("[main_pretrain] torch.cuda.current_device():", torch.cuda.current_device())
+    print(
+        "[main_pretrain] next(model.parameters()).device:",
+        next(model.parameters()).device,
+    )
 
     batch_time = AverageMeter()
     loss_meter = AverageMeter()
 
     end = time.time()
     for idx, data in enumerate(train_loader):
+        print(
+            "[main_pretrain] data.get_device():",
+            data.get_device(),
+        )
 
         data = [item.to(device, non_blocking=True) for item in data]
 
@@ -233,6 +242,7 @@ if __name__ == "__main__":
     opt = parse_option(stage="pre-train")
 
     if opt.local_rank:
+        print("[main_pretrain] opt.local_rank:", opt.local_rank)
         torch.device(opt.local_rank)
     torch.distributed.init_process_group(backend="nccl", init_method="env://")
     cudnn.benchmark = True
