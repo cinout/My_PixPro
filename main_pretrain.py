@@ -234,7 +234,7 @@ if __name__ == "__main__":
 
     if opt.local_rank:
         torch.device(opt.local_rank)
-    torch.distributed.init_process_group(backend="gloo", init_method="env://")
+    torch.distributed.init_process_group(backend="nccl", init_method="env://")
     cudnn.benchmark = True
     opt.output_dir = opt.output_dir + "_" + opt.timestamp
 
