@@ -138,6 +138,7 @@ def main(args):
     args.num_instances = len(train_loader.dataset)
     logger.info(f"length of training dataset: {args.num_instances}")
 
+    print("[main_pretrain] torch.cuda.current_device():", torch.cuda.current_device())
     model, optimizer = build_model(args)
     scheduler = get_scheduler(optimizer, len(train_loader), args)
 
@@ -189,7 +190,6 @@ def train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer
     one epoch training
     """
     model.train()
-    print("[main_pretrain] torch.cuda.current_device():", torch.cuda.current_device())
     print(
         "[main_pretrain] next(model.parameters()).device:",
         next(model.parameters()).device,
