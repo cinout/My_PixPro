@@ -202,14 +202,14 @@ def train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer
     for idx, data in enumerate(train_loader):
         print(
             "[main_pretrain] BEFORE data.get_device():",
-            data.get_device(),
+            data[0].get_device(),
         )
 
         data = [item.to(device, non_blocking=True) for item in data]
 
         print(
             "[main_pretrain] AFTER data.get_device():",
-            data.get_device(),
+            data[0].get_device(),
         )
 
         # In PixPro, data[0] -> im1, data[1] -> im2, data[2] -> coord1, data[3] -> coord2
