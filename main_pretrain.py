@@ -144,6 +144,7 @@ def main(args):
     print("args.pretrained_model:\t\t", args.pretrained_model)
     print("args.resume:\t\t", args.resume)
     print("args.auto_resume:\t\t", args.auto_resume)
+    print("args.num_workers:\t\t", args.num_workers)
 
     # optionally resume from a checkpoint
     if args.pretrained_model:
