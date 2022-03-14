@@ -214,8 +214,6 @@ def train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer
             next(model.parameters()).device,
         )
 
-        model = model.to(data[0].device)
-
         # In PixPro, data[0] -> im1, data[1] -> im2, data[2] -> coord1, data[3] -> coord2
         loss = model(data[0], data[1], data[2], data[3])
 

@@ -273,6 +273,8 @@ class PixPro(BaseModel):
         Output:
             logits, targets
         """
+
+        self.to(im_1.device)
         # compute query features
         print(
             "[PixPro] data.device:\t\t",
