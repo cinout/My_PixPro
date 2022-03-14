@@ -74,7 +74,7 @@ def build_model(args):
 
 
 def load_pretrained(model, pretrained_model):
-    ckpt = torch.load(pretrained_model, map_location="cpu")
+    ckpt = torch.load(pretrained_model, map_location=device)
     state_dict = ckpt["model"]
     model_dict = model.state_dict()
 
@@ -86,7 +86,7 @@ def load_pretrained(model, pretrained_model):
 def load_checkpoint(args, model, optimizer, scheduler, sampler=None):
     logger.info(f"=> loading checkpoint '{args.resume}'")
 
-    checkpoint = torch.load(args.resume, map_location="cpu")
+    checkpoint = torch.load(args.resume, map_location=device)
     args.start_epoch = checkpoint["epoch"] + 1
     model.load_state_dict(checkpoint["model"])
     optimizer.load_state_dict(checkpoint["optimizer"])
