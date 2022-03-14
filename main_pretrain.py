@@ -141,6 +141,10 @@ def main(args):
     model, optimizer = build_model(args)
     scheduler = get_scheduler(optimizer, len(train_loader), args)
 
+    print("args.pretrained_model:\t\t", args.pretrained_model)
+    print("args.resume:\t\t", args.resume)
+    print("args.auto_resume:\t\t", args.auto_resume)
+
     # optionally resume from a checkpoint
     if args.pretrained_model:
         assert os.path.isfile(args.pretrained_model)
