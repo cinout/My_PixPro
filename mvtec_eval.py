@@ -9,7 +9,6 @@ import torch.nn as nn
 from contrast import resnet
 from density import GaussianDensityTorch
 from mvtec_dataloader import MVTecDRAEMTestDataset, MVTecDRAEMTrainDataset
-import timeit
 from datetime import datetime
 from scipy import signal
 import cv2

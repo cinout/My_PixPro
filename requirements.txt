@@ -1,5 +1,5 @@
-pycocotools
-opencv-python
-pillow
-tensorboard
-termcolor
+conda install pytorch==1.6.0 torchvision==0.7.0 cudatoolkit=10.1 -c pytorch
+conda install scikit-learn
+conda install -c menpo opencv
+conda install -c omnia termcolor
+conda install -c conda-forge pycocotools

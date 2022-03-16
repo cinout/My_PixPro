@@ -1,16 +1,14 @@
 import json
 import os
-from sqlite3 import Timestamp
 import time
 from shutil import copyfile
-
 import torch
 import torch.distributed as dist
 from torch.backends import cudnn
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.tensorboard import SummaryWriter
-
+import torch.cuda.amp as amp
 from contrast import models
 from contrast import resnet
 from contrast.data import get_loader
