@@ -8,9 +8,9 @@
 
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
-#SBATCH --gres=gpu:3
-#SBATCH --mem=40G
+#SBATCH --cpus-per-task=2
+#SBATCH --gres=gpu:2
+#SBATCH --mem=32G
 
 #SBATCH --mail-user=haitianh@student.unimelb.edu.au
 #SBATCH --mail-type=BEGIN
@@ -18,12 +18,12 @@
 #SBATCH --mail-type=FAIL
 
 # module load foss/2019b
-module add cuda/11.1.1
+module load cuda/11.1.1
 # module add gcc/8.3.0
 # module load pytorch/1.5.1-python-3.7.4
 # module load numpy/1.18.0-python-3.7.4
 
 module load anaconda3/2021.05
-source activate newpixpro
+conda activate newpixpro
 
 ./tools/pixpro_mvtec.sh

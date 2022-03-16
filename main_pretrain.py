@@ -16,6 +16,7 @@ from contrast.logger import setup_logger
 from contrast.lr_scheduler import get_scheduler
 from contrast.option import parse_option
 from contrast.util import AverageMeter
+import numpy as np
 from contrast.lars import add_weight_decay, LARS
 
 
@@ -246,6 +247,8 @@ def train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer
 if __name__ == "__main__":
     opt = parse_option(stage="pre-train")
 
+   
+
     if opt.local_rank:
         torch.device(opt.local_rank)
     torch.distributed.init_process_group(backend="nccl", init_method="env://")
@@ -261,6 +264,13 @@ if __name__ == "__main__":
         name="contrast",
         timestamp=opt.timestamp,
     )
+
+    logger.info("np.__version__:", np.__version__)
+    logger.info(
+        "device names:",
+        [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())],
+    )
+    logger.info("cuda version:", torch.version.cuda)
     if dist.get_rank() == 0:
         path = os.path.join(opt.output_dir, f"config_{opt.timestamp}.json")
         with open(path, "w") as f:
