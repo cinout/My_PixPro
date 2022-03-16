@@ -140,11 +140,6 @@ def main(args):
     model, optimizer = build_model(args)
     scheduler = get_scheduler(optimizer, len(train_loader), args)
 
-    print("args.pretrained_model:\t\t", args.pretrained_model)
-    print("args.resume:\t\t", args.resume)
-    print("args.auto_resume:\t\t", args.auto_resume)
-    print("args.num_workers:\t\t", args.num_workers)
-
     # optionally resume from a checkpoint
     if args.pretrained_model:
         assert os.path.isfile(args.pretrained_model)
@@ -201,18 +196,6 @@ def train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer
     for idx, data in enumerate(train_loader):
         data = [item.to(device, non_blocking=True) for item in data]
 
-        print(
-            "[main_pretrain] data.device:\t\t",
-            data[0].device,
-            data[1].device,
-            data[2].device,
-            data[3].device,
-        )
-        print(
-            "[main_pretrain] model.device:\t\t",
-            next(model.parameters()).device,
-        )
-
         # In PixPro, data[0] -> im1, data[1] -> im2, data[2] -> coord1, data[3] -> coord2
         loss = model(data[0], data[1], data[2], data[3])
 
@@ -247,7 +230,12 @@ def train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer
 if __name__ == "__main__":
     opt = parse_option(stage="pre-train")
 
-   
+    print("np.__version__:", np.__version__)
+    print(
+        "device names:",
+        [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())],
+    )
+    print("cuda version:", torch.version.cuda)
 
     if opt.local_rank:
         torch.device(opt.local_rank)
@@ -265,12 +253,6 @@ if __name__ == "__main__":
         timestamp=opt.timestamp,
     )
 
-    logger.info("np.__version__:", np.__version__)
-    logger.info(
-        "device names:",
-        [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())],
-    )
-    logger.info("cuda version:", torch.version.cuda)
     if dist.get_rank() == 0:
         path = os.path.join(opt.output_dir, f"config_{opt.timestamp}.json")
         with open(path, "w") as f:

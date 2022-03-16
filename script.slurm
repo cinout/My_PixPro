@@ -17,12 +17,8 @@
 #SBATCH --mail-type=END
 #SBATCH --mail-type=FAIL
 
-# module load foss/2019b
 module purge
 module load cuda/11.1.1
-# module add gcc/8.3.0
-# module load pytorch/1.5.1-python-3.7.4
-# module load numpy/1.18.0-python-3.7.4
 
 eval "$(conda shell.bash hook)"
 conda activate newpixpro

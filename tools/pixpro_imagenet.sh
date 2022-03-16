@@ -35,7 +35,7 @@ python -m torch.distributed.launch --master_port 12350 --nproc_per_node=${number
     --epochs 400 \
     --amp-opt-level O1 \
     \
-    --save-freq 100 \
+    --save-freq 1000 \
     --auto-resume \
     \
     --pixpro-p 2 \
