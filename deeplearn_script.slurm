@@ -14,12 +14,10 @@
 
 #SBATCH --mail-user=haitianh@student.unimelb.edu.au
 #SBATCH --mail-type=BEGIN
-#SBATCH --mail-type=END
-#SBATCH --mail-type=FAIL
 
 module purge
 
 eval "$(conda shell.bash hook)"
 conda activate newpixpro
 
-./tools/pixpro_mvtec.sh
+./tools/pixpro_imagenet.sh

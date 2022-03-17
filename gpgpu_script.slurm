@@ -14,8 +14,6 @@
 
 #SBATCH --mail-user=haitianh@student.unimelb.edu.au
 #SBATCH --mail-type=BEGIN
-#SBATCH --mail-type=END
-#SBATCH --mail-type=FAIL
 
 module purge
 
