@@ -254,6 +254,7 @@ if __name__ == "__main__":
             [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())],
         )
         print("cuda version:", torch.version.cuda)
+        print("dist.get_world_size():", dist.get_world_size())
         path = os.path.join(opt.output_dir, f"config_{opt.timestamp}.json")
         with open(path, "w") as f:
             json.dump(vars(opt), f, indent=2)
