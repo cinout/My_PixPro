@@ -63,8 +63,6 @@ def build_model(args):
     else:
         raise NotImplementedError
 
-    # FIXME: commented out because it causes error
-
     model = DistributedDataParallel(
         model, device_ids=[args.local_rank], broadcast_buffers=False
     )
