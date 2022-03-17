@@ -67,7 +67,7 @@ def build_model(args):
         model,
         device_ids=[args.local_rank],
         broadcast_buffers=False,
-        find_unused_parameters=True,  # TODO: should I remove this?
+        # find_unused_parameters=True,  # TODO: should I remove this?
     )
 
     return model, optimizer
