@@ -8,8 +8,8 @@
 
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
-#SBATCH --gres=gpu:v100:4
+#SBATCH --cpus-per-task=2
+#SBATCH --gres=gpu:v100:2
 #SBATCH --mem=32G
 
 #SBATCH --mail-user=haitianh@student.unimelb.edu.au
