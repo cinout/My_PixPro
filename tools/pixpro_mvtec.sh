@@ -32,7 +32,7 @@ python -m torch.distributed.launch --master_port 12350 --nproc_per_node=${number
     --base-lr 0.1 \
     --weight-decay 0.0003 \
     --warmup-epoch 5 \
-    --epochs 1000 \
+    --epochs 400 \
     --amp-opt-level O1 \
     \
     --save-freq 1000 \
