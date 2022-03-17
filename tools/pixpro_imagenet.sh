@@ -3,7 +3,7 @@
 set -e
 set -x
 
-number_of_processes=3
+number_of_processes=4
 data_dir="./data/imagenet/"
 output_dir="./output/pixpro_imagenet"
 
