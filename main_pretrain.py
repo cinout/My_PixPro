@@ -64,7 +64,10 @@ def build_model(args):
         raise NotImplementedError
 
     model = DistributedDataParallel(
-        model, device_ids=[args.local_rank], broadcast_buffers=False
+        model,
+        device_ids=[args.local_rank],
+        broadcast_buffers=False,
+        find_unused_parameters=True,  # TODO: should I remove this?
     )
 
     return model, optimizer
@@ -228,13 +231,6 @@ def train(epoch, train_loader, model, optimizer, scheduler, args, summary_writer
 if __name__ == "__main__":
     opt = parse_option(stage="pre-train")
 
-    print("np.__version__:", np.__version__)
-    print(
-        "device names:",
-        [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())],
-    )
-    print("cuda version:", torch.version.cuda)
-
     if opt.local_rank:
         torch.device(opt.local_rank)
     torch.distributed.init_process_group(backend="nccl", init_method="env://")
@@ -252,6 +248,12 @@ if __name__ == "__main__":
     )
 
     if dist.get_rank() == 0:
+        print("np.__version__:", np.__version__)
+        print(
+            "device names:",
+            [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())],
+        )
+        print("cuda version:", torch.version.cuda)
         path = os.path.join(opt.output_dir, f"config_{opt.timestamp}.json")
         with open(path, "w") as f:
             json.dump(vars(opt), f, indent=2)
