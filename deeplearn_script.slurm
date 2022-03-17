@@ -18,7 +18,6 @@
 #SBATCH --mail-type=FAIL
 
 module purge
-module load cuda/11.1.1
 
 eval "$(conda shell.bash hook)"
 conda activate newpixpro
